@@ -195,29 +195,29 @@ async def input_text_for_ad(message: types.Message, state: FSMContext):
 
 
 async def nowi(message):
-
-    chat_id = message.chat.id
     if len(botttt) >= 1:
-        while True: 
+        while botttt:
             msg = random.choice(botttt)
-            
             r = requests.get(f'https://t.me/{msg}')
-            
             if '<i class="tgme_icon_user"></i>' not in r.text:
-                
-                baza.append(chat_id)
-                do_spiska = f"{chat_id}:{msg}"
-                spisok.append(do_spiska)
-                        
-                sss = await message.answer(f"<b>✳️ Привет {message.from_user.first_name} ✳️</b>\n\n"
-                                    f"➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖\n"
-                                    f"<b>Вот твой Бот: <a href='http://t.me/{msg}'>@{msg}</a></b>\n\n"
-                                    f"➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖\n"
-                                    f"<b>Если Тот Умрет Вернись Сюда И Получишь Новый:</b>", reply_markup=menu)
-                await bot.pin_chat_message(chat_id = message.chat.id, message_id = sss.message_id)
+                sss = await message.answer(
+                    f"<b>✳️ Привет {message.from_user.first_name} ✳️</b>\n\n"
+                    f"➖➖➖➖➖➖➖➖➖➖➖➖\n"
+                    f"<b>Вот твой бот: <a href='http://t.me/{msg}'>@{msg}</a></b>\n\n"
+                    f"➖➖➖➖➖➖➖➖➖➖➖➖\n"
+                    f"<b>Если тот умрет, вернись сюда и получишь новый:</b>",
+                    reply_markup=menu
+                )
+                await bot.pin_chat_message(chat_id=message.chat.id, message_id=sss.message_id)
+                botttt.remove(msg)  # Удаляем выданного бота из списка
                 break
+            else:
+                botttt.remove(msg)  # Удаляем недоступного бота из списка
+        else:
+            await message.answer("<b>Нет доступных ботов в данный момент.</b>", reply_markup=menu)
     else:
-        await message.answer("<b>Боты Скоро Появяться</b>", reply_markup=menu)
+        await message.answer("<b>Боты скоро появятся</b>", reply_markup=menu)
+
 
 async def starii(message):
 
@@ -254,13 +254,7 @@ ps = []
 @dp.message_handler(commands=['start'], state="*")
 async def show_contact(message: types.Message, state: FSMContext):
     
-    chat_id = message.chat.id
-    if chat_id in baza:
-        task2 = asyncio.create_task(starii(message))
-        await task2
-    if chat_id not in baza:
-        task1 = asyncio.create_task(nowi(message))
-        await task1
+    await nowi(message)
 
             
 
