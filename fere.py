@@ -192,11 +192,8 @@ async def is_bot_alive(bot_username):
             async with session.get(f'https://t.me/{bot_username}') as response:
                 if response.status == 200:
                     text = await response.text()
-                    has_title = 'tgme_page_title' in text
-                    has_description = 'tgme_page_description' in text
-                    has_icon = '<i class="tgme_icon_user"' in text or '<img class="tgme_page_photo"' in text
-                    is_blocked = 'Bot was blocked' in text or 'This bot is unavailable' in text
-                    if (has_title or has_description or has_icon) and not is_blocked:
+                    # Простая проверка на наличие заголовка и описания
+                    if 'tgme_page_title' in text and 'tgme_page_description' in text:
                         return True
     except Exception as e:
         print(f"Error checking bot @{bot_username}: {e}")
