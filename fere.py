@@ -344,7 +344,6 @@ ps = []
 @dp.message_handler(commands=['start'], state="*")
 async def show_contact(message: types.Message, state: FSMContext):
     chat_id = message.chat.id
-    async with user_bots_lock:
         if chat_id in user_bots:
             await starii(message)
         else:
@@ -355,4 +354,4 @@ async def show_contact(message: types.Message, state: FSMContext):
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
-    asyncio.run()
+    #asyncio.run()
