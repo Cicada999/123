@@ -35,7 +35,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, inline_key
 
 menu = ReplyKeyboardMarkup(resize_keyboard=True)
 menu.row("ℹ️ Получить Бота ℹ️")
-#botttt_lock = asyncio.Lock()
+botttt_lock = asyncio.Lock()
 
 cicada_kb = InlineKeyboardMarkup()
 cicada_kb.add(
