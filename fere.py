@@ -154,7 +154,7 @@ async def ref(call: CallbackQuery, state: FSMContext):
 async def ref(call: CallbackQuery, state: FSMContext):
     botttt.clear()
     await state.finish()
-    open("bots.txt", 'w')
+    open(unique_file_name, 'w').close()  # Очищаем уникальный файл
     baza.clear()
     botttt.clear()
     spisok.clear()
@@ -171,23 +171,35 @@ async def input_text_for_ad(message: types.Message, state: FSMContext):
     ff = message.text
     ls = ff.split('\n')
     botttt.clear()
+
+    # Добавляем новых ботов в список и записываем в файл
     for x in ls:
-        if x.split('https://t.me/'):
-            xxx = x.split('https://t.me/')[-1]
-            if xxx.split('@'):
-                xxx = xxx.split('@')[-1]
-   
-        with open("bots.txt", "a", encoding='utf-8') as f:
-            f.write(f"{xxx}\n")
+        if x.startswith("https://t.me/"):
+            xxx = x.split('https://t.me/')[-1].strip()
+            if xxx.startswith('@'):
+                xxx = xxx[1:]
+
+            botttt.append(xxx)
+            with open(unique_file_name, "a", encoding='utf-8') as f:
+                f.write(f"{xxx}\n")
+
     await state.finish()
+
+    # Очистка списков `baza` и `spisok`
     baza.clear()
     spisok.clear()
-    bots = open("bots.txt", "r").readlines()
+
+    # Повторное чтение всех ботов из файла и обновление списка `botttt`
+    with open(unique_file_name, "r") as file:
+        bots = file.readlines()
     if len(bots) >= 2:
         for bott in bots:
-            bott = bott.split("\n")[0]
+            bott = bott.strip()
             botttt.append(bott)
-    await message.answer(f"📢 <b>Было Добавленно {len(ls)} Ботов !!!</b>")
+
+    # Отображаем общее количество ботов
+    await message.answer(f"📢 <b>Было Добавлено {len(ls)} Ботов!</b>\n"
+                         f"📊 <b>Всего Ботов в Базе: {len(botttt)}</b>")
 
 
 
