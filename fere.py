@@ -160,8 +160,11 @@ async def ref(call: CallbackQuery, state: FSMContext):
     try:
         async with botttt_lock:
             botttt.clear()
-        with open(unique_file_name, 'w') as f:
-            f.truncate(0)  # Clear the file content
+            baza.clear()
+            spisok.clear()
+        # Открываем файл в режиме 'w' и сразу закрываем, чтобы очистить его содержимое
+            open(unique_file_name, 'w').close()
+        await state.finish()
         await call.message.answer("📢 <b>Список ботов очищен!</b>")
     except Exception as e:
         print(f"Error clearing bot list: {e}")
