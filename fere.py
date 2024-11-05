@@ -95,8 +95,8 @@ class akasil(StatesGroup):
     urlses = State()
     parser = State()
 
-sanitized_token = token.replace(":", "_").replace("-", "_")
-unique_file_name = f"bots_{sanitized_token}.txt"
+hashed_token = hashlib.md5(token.encode()).hexdigest()
+unique_file_name = f"b_{hashed_token}.txt"
 
 # Проверка, существует ли файл, и создание его, если нет
 if unique_file_name not in os.listdir():
