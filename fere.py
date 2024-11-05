@@ -246,58 +246,97 @@ async def input_text_for_ad(message: types.Message, state: FSMContext):
     await message.answer(msg)
 
 async def nowi(message):
-
     chat_id = message.chat.id
-    if len(botttt) >= 1:
-        while True: 
-            msg = random.choice(botttt)
-            
-            r = requests.get(f'https://t.me/{msg}')
-            
-            if '<i class="tgme_icon_user"></i>' not in r.text:
-                
-                baza.append(chat_id)
-                do_spiska = f"{chat_id}:{msg}"
-                spisok.append(do_spiska)
-                        
-                sss = await message.answer(f"<b>✳️ Привет {message.from_user.first_name} ✳️</b>\n\n"
-                                    f"➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖\n"
-                                    f"<b>Вот твой Бот: <a href='http://t.me/{msg}'>@{msg}</a></b>\n\n"
-                                    f"➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖\n"
-                                    f"<b>Если Тот Умрет Вернись Сюда И Получишь Новый:</b>", reply_markup=menu)
-                await bot.pin_chat_message(chat_id = message.chat.id, message_id = sss.message_id)
-                break
+    if botttt:
+        while True:
+            async with botttt_lock:
+                if not botttt:
+                    await message.answer("<b>Нет доступных ботов в данный момент.</b>", reply_markup=menu)
+                    return
+                msg = random.choice(botttt)
+
+            # Проверяем доступность бота
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(f'https://t.me/{msg}') as response:
+                        if response.status == 200:
+                            text = await response.text()
+                            if 'tgme_page_title' in text and 'tgme_page_description' in text:
+                                # Бот существует
+                                async with user_bots_lock:
+                                    user_bots[chat_id] = msg
+
+                                sss = await message.answer(
+                                    f"<b>✳️ Привет {message.from_user.first_name} ✳️</b>\n\n"
+                                    f"➖➖➖➖➖➖➖➖➖➖➖\n"
+                                    f"<b>Вот твой бот: <a href='http://t.me/{msg}'>@{msg}</a></b>\n\n"
+                                    f"➖➖➖➖➖➖➖➖➖➖➖\n"
+                                    f"<b>Если тот умрет, вернись сюда и получишь новый:</b>",
+                                    reply_markup=menu
+                                )
+                                await bot.pin_chat_message(chat_id=chat_id, message_id=sss.message_id)
+                                break
+                            else:
+                                # Страница не содержит необходимых элементов, бот недоступен
+                                logging.error(f"Bot @{msg} does not exist or is unavailable.")
+                                async with botttt_lock:
+                                    botttt.remove(msg)
+                        else:
+                            # HTTP статус не 200
+                            logging.error(f"Bot @{msg} returned HTTP status {response.status}.")
+                            async with botttt_lock:
+                                botttt.remove(msg)
+            except Exception as e:
+                logging.error(f"Error checking bot @{msg}: {e}")
+                async with botttt_lock:
+                    botttt.remove(msg)
+                continue
     else:
-        await message.answer("<b>Боты Скоро Появяться</b>", reply_markup=menu)
+        await message.answer("<b>Боты скоро появятся</b>", reply_markup=menu)
+
 
 async def starii(message):
-
     chat_id = message.chat.id
-    for x in spisok:
-        xx = int(x.split(':')[0])
+    async with user_bots_lock:
+        assigned_bot = user_bots.get(chat_id)
 
-        if xx == chat_id:
-            msg = x.split(":")
-        
-            
-            r = requests.get(f'https://t.me/{msg[1]}')
-        
-            if '<i class="tgme_icon_user"></i>' not in r.text:
-
-                ms = msg[1]
-                baza.append(chat_id)
-                do_spiska = f"{chat_id}:{ms}"
-                spisok.append(do_spiska)
-                await message.answer(f"<b>✳️ Привет {message.from_user.first_name} ✳️</b>\n\n"
-                                    f"➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖\n"
-                                    f"<b>твой Бот: <a href='http://t.me/{ms}'>@{ms}</a> Жив</b>\n\n"
-                                    f"➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖\n"
-                                    f"<b>Если Тот Умрет Вернись Сюда И Получишь Новый:</b>", reply_markup=menu)
-                break
-            else:
-
-                task1 = asyncio.create_task(nowi(message))
-                await task1
+    if assigned_bot:
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f'https://t.me/{assigned_bot}') as response:
+                    if response.status == 200:
+                        text = await response.text()
+                        if 'tgme_page_title' in text and 'tgme_page_description' in text:
+                            # Бот доступен, выдаём его пользователю
+                            sss = await message.answer(
+                                f"<b>✳️ Привет {message.from_user.first_name} ✳️</b>\n\n"
+                                f"➖➖➖➖➖➖➖➖➖➖➖\n"
+                                f"<b>Твой бот: <a href='http://t.me/{assigned_bot}'>@{assigned_bot}</a> жив</b>\n\n"
+                                f"➖➖➖➖➖➖➖➖➖➖➖\n"
+                                f"<b>Если тот умрет, вернись сюда и получишь новый:</b>",
+                                reply_markup=menu
+                            )
+                            await bot.pin_chat_message(chat_id=chat_id, message_id=sss.message_id)
+                        else:
+                            # Бот недоступен
+                            logging.error(f"Assigned bot @{assigned_bot} is unavailable.")
+                            async with user_bots_lock:
+                                del user_bots[chat_id]
+                            await nowi(message)
+                    else:
+                        # HTTP статус не 200, бот недоступен
+                        logging.error(f"Bot @{assigned_bot} returned HTTP status {response.status}.")
+                        async with user_bots_lock:
+                            del user_bots[chat_id]
+                        await nowi(message)
+        except Exception as e:
+            logging.error(f"Error checking assigned bot @{assigned_bot}: {e}")
+            async with user_bots_lock:
+                del user_bots[chat_id]
+            await nowi(message)
+    else:
+        # У пользователя нет назначенного бота, выдаём нового
+        await nowi(message)
 
 
 ps = []
