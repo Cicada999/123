@@ -35,7 +35,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, inline_key
 
 menu = ReplyKeyboardMarkup(resize_keyboard=True)
 menu.row("ℹ️ Получить Бота ℹ️")
-botttt_lock = asyncio.Lock()
+#botttt_lock = asyncio.Lock()
 
 cicada_kb = InlineKeyboardMarkup()
 cicada_kb.add(
@@ -115,12 +115,10 @@ try:
     if len(bots) >= 2:
         for bott in bots:
             bott = bott.strip()
-            if bott:
-                botttt.append(bott)
+            botttt.append(bott)
     #print(len(botttt))
 except Exception as e:
     print(f"Error reading the bot list file: {e}")
-    bots = []
 
 
 bot = Bot(token=token, parse_mode="HTML")
@@ -181,15 +179,10 @@ async def input_text_for_ad(message: types.Message, state: FSMContext):
     ls = ff.split('\n')
     botttt.clear()  # Очищаем список ботов перед обновлением
     for x in ls:
-        x = x.strip()
-        if x.startswith('https://t.me/'):
+        if x.split('https://t.me/'):
             xxx = x.split('https://t.me/')[-1]
-        elif x.startswith('@'):
-            xxx = x[1:]
-        else:
-            xxx = x
-        xxx = xxx.strip()
-        botttt.append(xxx)
+            if xxx.split('@'):
+                xxx = xxx.split('@')[-1]
         with open(unique_file_name, "a", encoding='utf-8') as f:
             f.write(f"{xxx}\n")
 
@@ -208,7 +201,7 @@ async def input_text_for_ad(message: types.Message, state: FSMContext):
 
 async def nowi(message):
     if len(botttt) >= 1:
-        while botttt:
+        while True: 
             msg = random.choice(botttt)
             r = requests.get(f'https://t.me/{msg}')
             if '<i class="tgme_icon_user"></i>' not in r.text:
@@ -221,7 +214,7 @@ async def nowi(message):
                     reply_markup=menu
                 )
                 await bot.pin_chat_message(chat_id=message.chat.id, message_id=sss.message_id)
-                botttt.remove(msg)  # Удаляем выданного бота из списка
+                #botttt.remove(msg)  # Удаляем выданного бота из списка
                 break
             else:
                 botttt.remove(msg)  # Удаляем недоступного бота из списка
