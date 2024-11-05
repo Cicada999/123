@@ -95,20 +95,25 @@ class akasil(StatesGroup):
     urlses = State()
     parser = State()
 
+sanitized_token = token.replace(":", "_").replace("-", "_")
+unique_file_name = f"bots_{sanitized_token}.txt"
 
+# Проверка, существует ли файл, и создание его, если нет
+if unique_file_name not in os.listdir():
+    open(unique_file_name, 'w').close()
 
-papka = os.listdir()
-if 'bots.txt' not in  papka:
-    open('bots.txt', 'w')
+# Чтение из уникального файла ботов
 baza = []
-
 spisok = []
 y = []
 botttt = []
-bots = open("bots.txt", "r").readlines()
+
+# Чтение списка ботов из уникального файла
+with open(unique_file_name, "r") as file:
+    bots = file.readlines()
 if len(bots) >= 2:
     for bott in bots:
-        bott = bott.split("\n")[0]
+        bott = bott.strip()
         botttt.append(bott)
 print(len(botttt))
 bot = Bot(token=token, parse_mode="HTML")
