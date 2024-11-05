@@ -236,15 +236,12 @@ async def input_text_for_ad(message: types.Message, state: FSMContext):
         else:
             dead_bots.append(xxx)
 
-             
+    # Обновление списка botttt
+    botttt.clear()
+    botttt.extend(new_bots)
+    await update_bot_file()  # Вызов функции для записи в файл
 
-        # Обновление списка botttt
-  botttt.clear()
-  botttt.extend(new_bots)
-  await update_bot_file()  # Вызов функции для записи в файл
-
-    
-  await state.finish()
+    await state.finish()
 
     # Формирование сообщения для отправки администратору
     added_count = len(new_bots)
