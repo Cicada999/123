@@ -230,41 +230,23 @@ async def input_text_for_ad(message: types.Message, state: FSMContext):
         xxx = xxx.strip()
 
         # Проверка доступности бота
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f'https://t.me/{xxx}') as response:
-                    if response.status == 200:
-                        text = await response.text()
-                        if 'tgme_page_title' in text and 'tgme_page_description' in text:
-                            # Бот существует
-                            new_bots.append(xxx)
-                        else:
-                            # Страница не найдена или бот недоступен
-                            dead_bots.append(xxx)
-                    else:
-                        # HTTP статус не 200
-                        dead_bots.append(xxx)
-        except Exception as e:
-            # В случае любой ошибки считаем бота недоступным
-            print(f"Error checking bot @{xxx}: {e}")
+        is_alive = await is_bot_alive(xxx)
+        if is_alive:
+            new_bots.append(xxx)
+        else:
             dead_bots.append(xxx)
 
-    # Запись новых ботов в файл
-    try:
-        # Открываем файл в режиме записи, чтобы перезаписать его содержимое
-        with open(unique_file_name, "w", encoding='utf-8') as f:
-            for bot_username in new_bots:
-                f.write(f"{bot_username}\n")
+             
     except Exception as e:
         print(f"Error writing to bot list file: {e}")
         await message.answer("<b>Произошла ошибка при сохранении ботов. Попробуйте еще раз.</b>")
         return
 
     # Обновление списка botttt с использованием блокировки
-    async with botttt_lock:
-        botttt.clear()
-        botttt.extend(new_bots)
-
+    
+    botttt.clear()
+    botttt.extend(new_bots)
+    await update_bot_file()
     await state.finish()
 
     # Формирование сообщения для отправки администратору
