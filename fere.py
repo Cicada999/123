@@ -303,6 +303,7 @@ async def starii(message):
 ps = []
 @dp.message_handler(text='ℹ️ Получить Бота ℹ️', state="*")
 @dp.message_handler(commands=['start'], state="*")
+async def show_contact(message: types.Message, state: FSMContext):
     chat_id = message.chat.id
     if chat_id in baza:
         task2 = asyncio.create_task(starii(message))
