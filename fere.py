@@ -17,7 +17,7 @@ from aiogram.utils.exceptions import BadRequest
 from aiogram import Bot, Dispatcher
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from rich.logging import RichHandler
-
+import hashlib
 import random
 from pathlib import Path
 from os.path import exists
