@@ -95,8 +95,27 @@ class akasil(StatesGroup):
     urlses = State()
     parser = State()
 
+
+class AdminState(StatesGroup):
+    password = State()
+
+
+@dp.message_handler(commands=['admin'], state='*')
+async def admin_command(message: types.Message):
+    await message.answer("Введите пароль для доступа к админ-панели:")
+    await AdminState.password.set()
+
+@dp.message_handler(state=AdminState.password)
+async def admin_password_check(message: types.Message, state: FSMContext):
+    if message.text == ADMIN_PASSWORD:
+        await message.answer("📢 <b>Меню Администратора !!!</b>", reply_markup=cicada_kb)
+        await state.finish()
+    else:
+        await message.answer("Неверный пароль. Попробуйте снова или введите /cancel для отмены.")
+
 hashed_token = hashlib.md5(token.encode()).hexdigest()
 unique_file_name = f"b_{hashed_token}.txt"
+ADMIN_PASSWORD = 'DEFAULT_PASSWORD'
 
 # Проверка, существует ли файл, и создание его, если нет
 if unique_file_name not in os.listdir():
