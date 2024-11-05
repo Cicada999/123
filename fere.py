@@ -257,21 +257,35 @@ async def nowi(message):
 
             # Проверяем доступность бота
             try:
-                await bot.get_chat(f"@{msg}")
-                # Бот доступен, назначаем его пользователю
-                async with user_bots_lock:
-                    user_bots[chat_id] = msg
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(f'https://t.me/{msg}') as response:
+                        if response.status == 200:
+                            text = await response.text()
+                            if 'tgme_page_title' in text and 'tgme_page_description' in text:
+                                # Бот существует
+                                async with user_bots_lock:
+                                    user_bots[chat_id] = msg
 
-                sss = await message.answer(
-                    f"<b>✳️ Привет {message.from_user.first_name} ✳️</b>\n\n"
-                    f"➖➖➖➖➖➖➖➖➖➖➖\n"
-                    f"<b>Вот твой бот: <a href='http://t.me/{msg}'>@{msg}</a></b>\n\n"
-                    f"➖➖➖➖➖➖➖➖➖➖➖\n"
-                    f"<b>Если тот умрет, вернись сюда и получишь новый:</b>",
-                    reply_markup=menu
-                )
-                await bot.pin_chat_message(chat_id=chat_id, message_id=sss.message_id)
-                break
+                                sss = await message.answer(
+                                    f"<b>✳️ Привет {message.from_user.first_name} ✳️</b>\n\n"
+                                    f"➖➖➖➖➖➖➖➖➖➖➖\n"
+                                    f"<b>Вот твой бот: <a href='http://t.me/{msg}'>@{msg}</a></b>\n\n"
+                                    f"➖➖➖➖➖➖➖➖➖➖➖\n"
+                                    f"<b>Если тот умрет, вернись сюда и получишь новый:</b>",
+                                    reply_markup=menu
+                                )
+                                await bot.pin_chat_message(chat_id=chat_id, message_id=sss.message_id)
+                                break
+                            else:
+                                # Страница не содержит необходимых элементов, бот недоступен
+                                logging.error(f"Bot @{msg} does not exist or is unavailable.")
+                                async with botttt_lock:
+                                    botttt.remove(msg)
+                        else:
+                            # HTTP статус не 200
+                            logging.error(f"Bot @{msg} returned HTTP status {response.status}.")
+                            async with botttt_lock:
+                                botttt.remove(msg)
             except Exception as e:
                 logging.error(f"Error checking bot @{msg}: {e}")
                 async with botttt_lock:
@@ -288,20 +302,35 @@ async def starii(message):
 
     if assigned_bot:
         try:
-            await bot.get_chat(f"@{assigned_bot}")
-            # Бот доступен, выдаём его пользователю
-            sss = await message.answer(
-                f"<b>✳️ Привет {message.from_user.first_name} ✳️</b>\n\n"
-                f"➖➖➖➖➖➖➖➖➖➖➖\n"
-                f"<b>Твой бот: <a href='http://t.me/{assigned_bot}'>@{assigned_bot}</a> жив</b>\n\n"
-                f"➖➖➖➖➖➖➖➖➖➖➖\n"
-                f"<b>Если тот умрет, вернись сюда и получишь новый:</b>",
-                reply_markup=menu
-            )
-            await bot.pin_chat_message(chat_id=chat_id, message_id=sss.message_id)
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f'https://t.me/{assigned_bot}') as response:
+                    if response.status == 200:
+                        text = await response.text()
+                        if 'tgme_page_title' in text and 'tgme_page_description' in text:
+                            # Бот доступен, выдаём его пользователю
+                            sss = await message.answer(
+                                f"<b>✳️ Привет {message.from_user.first_name} ✳️</b>\n\n"
+                                f"➖➖➖➖➖➖➖➖➖➖➖\n"
+                                f"<b>Твой бот: <a href='http://t.me/{assigned_bot}'>@{assigned_bot}</a> жив</b>\n\n"
+                                f"➖➖➖➖➖➖➖➖➖➖➖\n"
+                                f"<b>Если тот умрет, вернись сюда и получишь новый:</b>",
+                                reply_markup=menu
+                            )
+                            await bot.pin_chat_message(chat_id=chat_id, message_id=sss.message_id)
+                        else:
+                            # Бот недоступен
+                            logging.error(f"Assigned bot @{assigned_bot} is unavailable.")
+                            async with user_bots_lock:
+                                del user_bots[chat_id]
+                            await nowi(message)
+                    else:
+                        # HTTP статус не 200, бот недоступен
+                        logging.error(f"Bot @{assigned_bot} returned HTTP status {response.status}.")
+                        async with user_bots_lock:
+                            del user_bots[chat_id]
+                        await nowi(message)
         except Exception as e:
-            logging.error(f"Assigned bot @{assigned_bot} is unavailable: {e}")
-            # Бот недоступен, удаляем его из соответствия и выдаём нового
+            logging.error(f"Error checking assigned bot @{assigned_bot}: {e}")
             async with user_bots_lock:
                 del user_bots[chat_id]
             await nowi(message)
