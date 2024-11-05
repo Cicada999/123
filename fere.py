@@ -170,18 +170,22 @@ async def ref(call: CallbackQuery, state: FSMContext):
 async def input_text_for_ad(message: types.Message, state: FSMContext):
     ff = message.text
     ls = ff.split('\n')
-    botttt.clear()
+    botttt.clear()  # Очищаем список ботов перед обновлением
 
     # Добавляем новых ботов в список и записываем в файл
-    for x in ls:
-        if x.startswith("https://t.me/"):
-            xxx = x.split('https://t.me/')[-1].strip()
-            if xxx.startswith('@'):
-                xxx = xxx[1:]
+    with open(unique_file_name, "a", encoding='utf-8') as f:
+        for x in ls:
+            # Проверяем, что строка начинается с "https://t.me/"
+            if x.startswith("https://t.me/"):
+                # Извлекаем юзернейм бота
+                xxx = x.split('https://t.me/')[-1].strip()
+                if xxx.startswith('@'):
+                    xxx = xxx[1:]  # Удаляем символ '@', если он присутствует
 
-            botttt.append(xxx)
-            with open(unique_file_name, "a", encoding='utf-8') as f:
-                f.write(f"{xxx}\n")
+                # Проверяем, что юзернейм не пустой
+                if xxx:
+                    botttt.append(xxx)  # Добавляем юзернейм в список
+                    f.write(f"{xxx}\n")  # Записываем юзернейм в файл
 
     await state.finish()
 
@@ -192,10 +196,12 @@ async def input_text_for_ad(message: types.Message, state: FSMContext):
     # Повторное чтение всех ботов из файла и обновление списка `botttt`
     with open(unique_file_name, "r") as file:
         bots = file.readlines()
-    if len(bots) >= 2:
+    if bots:  # Проверяем, что файл не пустой
+        botttt.clear()  # Очищаем список перед заполнением
         for bott in bots:
             bott = bott.strip()
-            botttt.append(bott)
+            if bott:
+                botttt.append(bott)
 
     # Отображаем общее количество ботов
     await message.answer(f"📢 <b>Было Добавлено {len(ls)} Ботов!</b>\n"
