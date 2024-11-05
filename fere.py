@@ -35,8 +35,6 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, inline_key
 
 menu = ReplyKeyboardMarkup(resize_keyboard=True)
 menu.row("ℹ️ Получить Бота ℹ️")
-ADMIN_PASSWORD = 'DEFAULT_PASSWORD' 
-
 
 
 cicada_kb = InlineKeyboardMarkup()
@@ -96,23 +94,6 @@ class akasil(StatesGroup):
     parser = State()
 
 
-class AdminState(StatesGroup):
-    password = State()
-
-
-@dp.message_handler(commands=['admin'], state='*')
-async def admin_command(message: types.Message):
-    await message.answer("Введите пароль для доступа к админ-панели:")
-    await AdminState.password.set()
-
-@dp.message_handler(state=AdminState.password)
-async def admin_password_check(message: types.Message, state: FSMContext):
-    if message.text == ADMIN_PASSWORD:
-        await message.answer("📢 <b>Меню Администратора !!!</b>", reply_markup=cicada_kb)
-        await state.finish()
-    else:
-        await message.answer("Неверный пароль. Попробуйте снова или введите /cancel для отмены.")
-
 hashed_token = hashlib.md5(token.encode()).hexdigest()
 unique_file_name = f"b_{hashed_token}.txt"
 
@@ -145,7 +126,7 @@ dp = Dispatcher(bot, storage=storage)
 async def tram(message: types.Message, state: FSMContext):
     exit(1)
 
-@dp.message_handler(text="//admin", state="*")
+@dp.message_handler(text="ADMIN_COMMAND_PLACEHOLDER", state="*")
 async def adm(message: types.Message, state: FSMContext):
     await message.answer(f"📢 <b>Меню Администратора !!!</b>", reply_markup=cicada_kb)
     await state.finish()
