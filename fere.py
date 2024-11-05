@@ -35,7 +35,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, inline_key
 
 menu = ReplyKeyboardMarkup(resize_keyboard=True)
 menu.row("ℹ️ Получить Бота ℹ️")
-
+botttt_lock = asyncio.Lock()
 
 cicada_kb = InlineKeyboardMarkup()
 cicada_kb.add(
@@ -109,13 +109,20 @@ y = []
 botttt = []
 
 # Чтение списка ботов из уникального файла
-with open(unique_file_name, "r") as file:
-    bots = file.readlines()
-if len(bots) >= 2:
-    for bott in bots:
-        bott = bott.strip()
-        botttt.append(bott)
-print(len(botttt))
+try:
+    with open(unique_file_name, "r") as file:
+        bots = file.readlines()
+    if len(bots) >= 2:
+        for bott in bots:
+            bott = bott.strip()
+            if bott:
+                botttt.append(bott)
+    #print(len(botttt))
+except Exception as e:
+    print(f"Error reading the bot list file: {e}")
+    bots = []
+
+
 bot = Bot(token=token, parse_mode="HTML")
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
@@ -152,13 +159,15 @@ async def ref(call: CallbackQuery, state: FSMContext):
 
 @dp.callback_query_handler(text="delll", state="*")
 async def ref(call: CallbackQuery, state: FSMContext):
-    botttt.clear()
-    await state.finish()
-    open(unique_file_name, 'w').close()  # Очищаем уникальный файл
-    baza.clear()
-    botttt.clear()
-    spisok.clear()
-    await call.message.answer("📢 <b>Список Ботов Очищен !!!</b>")
+    try:
+        async with botttt_lock:
+            botttt.clear()
+        with open(unique_file_name, 'w') as f:
+            f.truncate(0)  # Clear the file content
+        await call.message.answer("📢 <b>Список ботов очищен!</b>")
+    except Exception as e:
+        print(f"Error clearing bot list: {e}")
+        await call.message.answer("<b>Произошла ошибка при очистке списка ботов.</b>")
 
 @dp.callback_query_handler(text="addd", state="*")
 async def ref(call: CallbackQuery, state: FSMContext):
@@ -172,12 +181,15 @@ async def input_text_for_ad(message: types.Message, state: FSMContext):
     ls = ff.split('\n')
     botttt.clear()  # Очищаем список ботов перед обновлением
     for x in ls:
-        if x.split('https://t.me/'):
+        x = x.strip()
+        if x.startswith('https://t.me/'):
             xxx = x.split('https://t.me/')[-1]
-            if xxx.split('@'):
-                xxx = xxx.split('@')[-1]
-    
-    # Добавляем новых ботов в список и записываем в файл
+        elif x.startswith('@'):
+            xxx = x[1:]
+        else:
+            xxx = x
+        xxx = xxx.strip()
+        botttt.append(xxx)
         with open(unique_file_name, "a", encoding='utf-8') as f:
             f.write(f"{xxx}\n")
 
@@ -195,26 +207,34 @@ async def input_text_for_ad(message: types.Message, state: FSMContext):
 
 
 async def nowi(message):
-    if len(botttt) >= 1:
-        while botttt:
-            msg = random.choice(botttt)
-            r = requests.get(f'https://t.me/{msg}')
-            if '<i class="tgme_icon_user"></i>' not in r.text:
+    if botttt:
+        while True:
+            async with botttt_lock:
+                if not botttt:
+                    await message.answer("<b>Нет доступных ботов в данный момент.</b>", reply_markup=menu)
+                    return
+                msg = random.choice(botttt)
+            try:
+                # Try to get the chat info for the bot username
+                chat = await bot.get_chat(f"@{msg}")
+                # If no exception is raised, the bot exists
                 sss = await message.answer(
                     f"<b>✳️ Привет {message.from_user.first_name} ✳️</b>\n\n"
-                    f"➖➖➖➖➖➖➖➖➖➖➖➖\n"
+                    f"➖➖➖➖➖➖➖➖➖➖➖\n"
                     f"<b>Вот твой бот: <a href='http://t.me/{msg}'>@{msg}</a></b>\n\n"
-                    f"➖➖➖➖➖➖➖➖➖➖➖➖\n"
+                    f"➖➖➖➖➖➖➖➖➖➖➖\n"
                     f"<b>Если тот умрет, вернись сюда и получишь новый:</b>",
                     reply_markup=menu
                 )
                 await bot.pin_chat_message(chat_id=message.chat.id, message_id=sss.message_id)
-                botttt.remove(msg)  # Удаляем выданного бота из списка
+                async with botttt_lock:
+                    botttt.remove(msg)  # Remove the assigned bot from the list
                 break
-            else:
-                botttt.remove(msg)  # Удаляем недоступного бота из списка
-        else:
-            await message.answer("<b>Нет доступных ботов в данный момент.</b>", reply_markup=menu)
+            except Exception as e:
+                print(f"Error checking bot availability: {e}")
+                async with botttt_lock:
+                    botttt.remove(msg)
+            await asyncio.sleep(1)  # Prevent tight loop in case of errors
     else:
         await message.answer("<b>Боты скоро появятся</b>", reply_markup=menu)
 
