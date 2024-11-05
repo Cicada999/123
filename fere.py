@@ -5,7 +5,7 @@ from aiogram.dispatcher.filters import ChatTypeFilter
 from aiogram.types import (ChatType, ContentTypes, InlineKeyboardButton,
                         InlineKeyboardMarkup, Message)
 
-import logging
+
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.types import CallbackQuery, Message
@@ -278,16 +278,16 @@ async def nowi(message):
                                 break
                             else:
                                 # Страница не содержит необходимых элементов, бот недоступен
-                                logging.error(f"Bot @{msg} does not exist or is unavailable.")
+                               
                                 async with botttt_lock:
                                     botttt.remove(msg)
                         else:
                             # HTTP статус не 200
-                            logging.error(f"Bot @{msg} returned HTTP status {response.status}.")
+                            
                             async with botttt_lock:
                                 botttt.remove(msg)
             except Exception as e:
-                logging.error(f"Error checking bot @{msg}: {e}")
+                
                 async with botttt_lock:
                     botttt.remove(msg)
                 continue
@@ -319,18 +319,18 @@ async def starii(message):
                             await bot.pin_chat_message(chat_id=chat_id, message_id=sss.message_id)
                         else:
                             # Бот недоступен
-                            logging.error(f"Assigned bot @{assigned_bot} is unavailable.")
+                            
                             async with user_bots_lock:
                                 del user_bots[chat_id]
                             await nowi(message)
                     else:
                         # HTTP статус не 200, бот недоступен
-                        logging.error(f"Bot @{assigned_bot} returned HTTP status {response.status}.")
+                        
                         async with user_bots_lock:
                             del user_bots[chat_id]
                         await nowi(message)
         except Exception as e:
-            logging.error(f"Error checking assigned bot @{assigned_bot}: {e}")
+            
             async with user_bots_lock:
                 del user_bots[chat_id]
             await nowi(message)
@@ -344,13 +344,13 @@ ps = []
 @dp.message_handler(commands=['start'], state="*")
 async def show_contact(message: types.Message, state: FSMContext):
     chat_id = message.chat.id
-    logging.error("11111")
+    
     async with user_bots_lock:
-        logging.error("44444.")
+        
         if chat_id in user_bots:
             await starii(message)
         else:  # Перенос else в правильное место, как часть блока if
-            logging.error("tttttt")
+            
             await nowi(message)
 
 
