@@ -344,12 +344,11 @@ ps = []
 @dp.message_handler(commands=['start'], state="*")
 async def show_contact(message: types.Message, state: FSMContext):
     chat_id = message.chat.id
-    if chat_id in baza:
-        task2 = asyncio.create_task(starii(message))
-        await task2
+    async with user_bots_lock:
+         if chat_id in user_bots:
+         await starii(message)
     else:  # Используем "else", чтобы сделать проверку более логичной
-        task1 = asyncio.create_task(nowi(message))
-        await task1
+        await nowi(message)
 
 
             
