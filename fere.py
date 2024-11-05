@@ -23,7 +23,7 @@ from pathlib import Path
 from os.path import exists
 import requests, os
 
-import asyncio, time
+import asyncio, time, aiohttp
 from aiogram.types import User
 import time
 from threading import Timer
@@ -179,28 +179,67 @@ async def ref(call: CallbackQuery, state: FSMContext):
 @dp.message_handler(state=akasil.sms_text)
 async def input_text_for_ad(message: types.Message, state: FSMContext):
     ff = message.text
-    ls = ff.split('\n')
-    botttt.clear()  # Очищаем список ботов перед обновлением
+    ls = ff.strip().split('\n')
+    dead_bots = []
+    new_bots = []
+
     for x in ls:
-        if x.split('https://t.me/'):
+        x = x.strip()
+        # Парсинг юзернейма бота
+        if x.startswith('https://t.me/'):
             xxx = x.split('https://t.me/')[-1]
-            if xxx.split('@'):
-                xxx = xxx.split('@')[-1]
-        with open(unique_file_name, "a", encoding='utf-8') as f:
-            f.write(f"{xxx}\n")
+        elif x.startswith('@'):
+            xxx = x[1:]
+        else:
+            xxx = x
+        xxx = xxx.strip()
+
+        # Проверка доступности бота
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f'https://t.me/{xxx}') as response:
+                    if response.status == 200:
+                        text = await response.text()
+                        if 'tgme_page_title' in text and 'tgme_page_description' in text:
+                            # Бот существует
+                            new_bots.append(xxx)
+                        else:
+                            # Страница не найдена или бот недоступен
+                            dead_bots.append(xxx)
+                    else:
+                        # HTTP статус не 200
+                        dead_bots.append(xxx)
+        except Exception as e:
+            # В случае любой ошибки считаем бота недоступным
+            print(f"Error checking bot @{xxx}: {e}")
+            dead_bots.append(xxx)
+
+    # Запись новых ботов в файл
+    try:
+        # Открываем файл в режиме записи, чтобы перезаписать его содержимое
+        with open(unique_file_name, "w", encoding='utf-8') as f:
+            for bot_username in new_bots:
+                f.write(f"{bot_username}\n")
+    except Exception as e:
+        print(f"Error writing to bot list file: {e}")
+        await message.answer("<b>Произошла ошибка при сохранении ботов. Попробуйте еще раз.</b>")
+        return
+
+    # Обновление списка botttt с использованием блокировки
+    async with botttt_lock:
+        botttt.clear()
+        botttt.extend(new_bots)
 
     await state.finish()
 
-    # Очистка списков `baza` и `spisok`
-    baza.clear()
-    spisok.clear()
-    bots = open(unique_file_name, "r").readlines()
-    if len(bots) >= 2:
-        for bott in bots:
-            bott = bott.split("\n")[0]
-            botttt.append(bott)
-    await message.answer(f"📢 <b>Было Добавленно {len(ls)} Ботов !!!</b>")
-
+    # Формирование сообщения для отправки администратору
+    added_count = len(new_bots)
+    total_count = len(ls)
+    msg = f"📢 <b>Было добавлено {added_count} ботов из {total_count}!</b>"
+    if dead_bots:
+        dead_bots_list = '\n'.join(dead_bots)
+        msg += f"\n\n<b>Неактивные боты:</b>\n{dead_bots_list}"
+    await message.answer(msg)
 
 async def nowi(message):
     if len(botttt) >= 1:
