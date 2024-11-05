@@ -344,14 +344,14 @@ ps = []
 @dp.message_handler(commands=['start'], state="*")
 async def show_contact(message: types.Message, state: FSMContext):
     chat_id = message.chat.id
-    logging.error(f"11111")
+    logging.error("11111")
     async with user_bots_lock:
-        logging.error(f"44444.")
+        logging.error("44444.")
         if chat_id in user_bots:
             await starii(message)
-    else:  # Используем "else", чтобы сделать проверку более логичной
-        logging.error(f"tttttt")
-        await nowi(message)
+        else:  # Перенос else в правильное место, как часть блока if
+            logging.error("tttttt")
+            await nowi(message)
 
 
             
