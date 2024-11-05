@@ -35,7 +35,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, inline_key
 
 menu = ReplyKeyboardMarkup(resize_keyboard=True)
 menu.row("ℹ️ Получить Бота ℹ️")
- 
+ADMIN_PASSWORD = 'DEFAULT_PASSWORD' 
 
 
 
@@ -115,7 +115,7 @@ async def admin_password_check(message: types.Message, state: FSMContext):
 
 hashed_token = hashlib.md5(token.encode()).hexdigest()
 unique_file_name = f"b_{hashed_token}.txt"
-ADMIN_PASSWORD = 'DEFAULT_PASSWORD'
+
 
 # Проверка, существует ли файл, и создание его, если нет
 if unique_file_name not in os.listdir():
