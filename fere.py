@@ -237,15 +237,12 @@ async def input_text_for_ad(message: types.Message, state: FSMContext):
             dead_bots.append(xxx)
 
              
-    try:
+
         # Обновление списка botttt
-        botttt.clear()
-        botttt.extend(new_bots)
-        await update_bot_file()  # Вызов функции для записи в файл
-    except Exception as e:
-        print(f"Error updating the bot list file: {e}")
-        await message.answer("<b>Произошла ошибка при сохранении ботов. Попробуйте еще раз.</b>")
-        return
+  botttt.clear()
+  botttt.extend(new_bots)
+  await update_bot_file()  # Вызов функции для записи в файл
+
     
   await state.finish()
 
