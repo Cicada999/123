@@ -308,9 +308,10 @@ async def show_contact(message: types.Message, state: FSMContext):
     if chat_id in baza:
         task2 = asyncio.create_task(starii(message))
         await task2
-    if chat_id not in baza:
+    else:  # Используем "else", чтобы сделать проверку более логичной
         task1 = asyncio.create_task(nowi(message))
         await task1
+
 
             
 
