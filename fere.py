@@ -37,6 +37,10 @@ menu = ReplyKeyboardMarkup(resize_keyboard=True)
 menu.row("ℹ️ Получить Бота ℹ️")
 botttt_lock = asyncio.Lock()
 
+user_bots = {}
+user_bots_lock = asyncio.Lock()  # Блокировка для безопасного доступа
+
+
 cicada_kb = InlineKeyboardMarkup()
 cicada_kb.add(
     InlineKeyboardButton('➕ Добавить Ботов', callback_data='addd'),
@@ -242,67 +246,80 @@ async def input_text_for_ad(message: types.Message, state: FSMContext):
     await message.answer(msg)
 
 async def nowi(message):
-    if len(botttt) >= 1:
-        while True: 
-            msg = random.choice(botttt)
-            r = requests.get(f'https://t.me/{msg}')
-            if '<i class="tgme_icon_user"></i>' not in r.text:
+    chat_id = message.chat.id
+    if botttt:
+        while True:
+            async with botttt_lock:
+                if not botttt:
+                    await message.answer("<b>Нет доступных ботов в данный момент.</b>", reply_markup=menu)
+                    return
+                msg = random.choice(botttt)
+
+            # Проверяем доступность бота
+            try:
+                await bot.get_chat(f"@{msg}")
+                # Бот доступен, назначаем его пользователю
+                async with user_bots_lock:
+                    user_bots[chat_id] = msg
+
                 sss = await message.answer(
                     f"<b>✳️ Привет {message.from_user.first_name} ✳️</b>\n\n"
-                    f"➖➖➖➖➖➖➖➖➖➖➖➖\n"
+                    f"➖➖➖➖➖➖➖➖➖➖➖\n"
                     f"<b>Вот твой бот: <a href='http://t.me/{msg}'>@{msg}</a></b>\n\n"
-                    f"➖➖➖➖➖➖➖➖➖➖➖➖\n"
-                    f"<b>Если тот умрет, вернись сюда и получишь новый:</b>\n"
-                    f"<b>А если умру я, то пиши оператору, юзер его ты знаешь, так как он никогда не меняется</b>",
+                    f"➖➖➖➖➖➖➖➖➖➖➖\n"
+                    f"<b>Если тот умрет, вернись сюда и получишь новый:</b>",
                     reply_markup=menu
                 )
-                await bot.pin_chat_message(chat_id=message.chat.id, message_id=sss.message_id)
-                #botttt.remove(msg)  # Удаляем выданного бота из списка
+                await bot.pin_chat_message(chat_id=chat_id, message_id=sss.message_id)
                 break
-            else:
-                botttt.remove(msg)  # Удаляем недоступного бота из списка
-        else:
-            await message.answer("<b>Нет доступных ботов в данный момент.</b>", reply_markup=menu)
+            except Exception as e:
+                logging.error(f"Error checking bot @{msg}: {e}")
+                async with botttt_lock:
+                    botttt.remove(msg)
+                continue
     else:
         await message.answer("<b>Боты скоро появятся</b>", reply_markup=menu)
 
 
 async def starii(message):
-
     chat_id = message.chat.id
-    for x in spisok:
-        xx = int(x.split(':')[0])
+    async with user_bots_lock:
+        assigned_bot = user_bots.get(chat_id)
 
-        if xx == chat_id:
-            msg = x.split(":")
-        
-            
-            r = requests.get(f'https://t.me/{msg[1]}')
-        
-            if '<i class="tgme_icon_user"></i>' not in r.text:
-
-                ms = msg[1]
-                baza.append(chat_id)
-                do_spiska = f"{chat_id}:{ms}"
-                spisok.append(do_spiska)
-                await message.answer(f"<b>✳️ Привет {message.from_user.first_name} ✳️</b>\n\n"
-                                    f"➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖\n"
-                                    f"<b>твой Бот: <a href='http://t.me/{ms}'>@{ms}</a> Жив</b>\n\n"
-                                    f"➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖\n"
-                                    f"<b>Если Тот Умрет Вернись Сюда И Получишь Новый:</b>", reply_markup=menu)
-                break
-            else:
-
-                task1 = asyncio.create_task(nowi(message))
-                await task1
+    if assigned_bot:
+        try:
+            await bot.get_chat(f"@{assigned_bot}")
+            # Бот доступен, выдаём его пользователю
+            sss = await message.answer(
+                f"<b>✳️ Привет {message.from_user.first_name} ✳️</b>\n\n"
+                f"➖➖➖➖➖➖➖➖➖➖➖\n"
+                f"<b>Твой бот: <a href='http://t.me/{assigned_bot}'>@{assigned_bot}</a> жив</b>\n\n"
+                f"➖➖➖➖➖➖➖➖➖➖➖\n"
+                f"<b>Если тот умрет, вернись сюда и получишь новый:</b>",
+                reply_markup=menu
+            )
+            await bot.pin_chat_message(chat_id=chat_id, message_id=sss.message_id)
+        except Exception as e:
+            logging.error(f"Assigned bot @{assigned_bot} is unavailable: {e}")
+            # Бот недоступен, удаляем его из соответствия и выдаём нового
+            async with user_bots_lock:
+                del user_bots[chat_id]
+            await nowi(message)
+    else:
+        # У пользователя нет назначенного бота, выдаём нового
+        await nowi(message)
 
 
 ps = []
 @dp.message_handler(text='ℹ️ Получить Бота ℹ️', state="*")
 @dp.message_handler(commands=['start'], state="*")
 async def show_contact(message: types.Message, state: FSMContext):
-    
-    await nowi(message)
+    chat_id = message.chat.id
+    async with user_bots_lock:
+        if chat_id in user_bots:
+            await starii(message)
+        else:
+            await nowi(message)
 
             
 
