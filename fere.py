@@ -192,23 +192,15 @@ async def is_bot_alive(bot_username):
             async with session.get(f'https://t.me/{bot_username}') as response:
                 if response.status == 200:
                     text = await response.text()
-                    # Проверяем на наличие сообщений об ошибках
-                    errors = [
-                        'Bot not found',
-                        'Unfortunately, this bot was deleted',
-                        'If you have the username, you can start the bot by sending a message',
-                        'This bot cannot be displayed because it violated local laws'
-                    ]
-                    if any(error in text for error in errors):
-                        return False
-                    else:
+                    has_title = 'tgme_page_title' in text
+                    has_description = 'tgme_page_description' in text
+                    has_icon = '<i class="tgme_icon_user"></i>' in text or '<img class="tgme_page_photo"' in text
+                    is_blocked = 'Bot was blocked' in text or 'This bot is unavailable' in text
+                    if (has_title or has_description or has_icon) and not is_blocked:
                         return True
-                else:
-                    # Если статус ответа не 200, считаем, что бот недоступен
-                    return False
     except Exception as e:
         print(f"Error checking bot @{bot_username}: {e}")
-        return False
+    return False
 
 
 @dp.message_handler(state=akasil.sms_text)
