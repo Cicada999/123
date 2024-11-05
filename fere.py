@@ -207,34 +207,26 @@ async def input_text_for_ad(message: types.Message, state: FSMContext):
 
 
 async def nowi(message):
-    if botttt:
-        while True:
-            async with botttt_lock:
-                if not botttt:
-                    await message.answer("<b>Нет доступных ботов в данный момент.</b>", reply_markup=menu)
-                    return
-                msg = random.choice(botttt)
-            try:
-                # Try to get the chat info for the bot username
-                chat = await bot.get_chat(f"@{msg}")
-                # If no exception is raised, the bot exists
+    if len(botttt) >= 1:
+        while botttt:
+            msg = random.choice(botttt)
+            r = requests.get(f'https://t.me/{msg}')
+            if '<i class="tgme_icon_user"></i>' not in r.text:
                 sss = await message.answer(
                     f"<b>✳️ Привет {message.from_user.first_name} ✳️</b>\n\n"
-                    f"➖➖➖➖➖➖➖➖➖➖➖\n"
+                    f"➖➖➖➖➖➖➖➖➖➖➖➖\n"
                     f"<b>Вот твой бот: <a href='http://t.me/{msg}'>@{msg}</a></b>\n\n"
-                    f"➖➖➖➖➖➖➖➖➖➖➖\n"
+                    f"➖➖➖➖➖➖➖➖➖➖➖➖\n"
                     f"<b>Если тот умрет, вернись сюда и получишь новый:</b>",
                     reply_markup=menu
                 )
                 await bot.pin_chat_message(chat_id=message.chat.id, message_id=sss.message_id)
-                async with botttt_lock:
-                    botttt.remove(msg)  # Remove the assigned bot from the list
+                botttt.remove(msg)  # Удаляем выданного бота из списка
                 break
-            except Exception as e:
-                print(f"Error checking bot availability: {e}")
-                async with botttt_lock:
-                    botttt.remove(msg)
-            await asyncio.sleep(1)  # Prevent tight loop in case of errors
+            else:
+                botttt.remove(msg)  # Удаляем недоступного бота из списка
+        else:
+            await message.answer("<b>Нет доступных ботов в данный момент.</b>", reply_markup=menu)
     else:
         await message.answer("<b>Боты скоро появятся</b>", reply_markup=menu)
 
