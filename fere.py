@@ -171,42 +171,27 @@ async def input_text_for_ad(message: types.Message, state: FSMContext):
     ff = message.text
     ls = ff.split('\n')
     botttt.clear()  # Очищаем список ботов перед обновлением
-
+    for x in ls:
+        if x.split('https://t.me/'):
+            xxx = x.split('https://t.me/')[-1]
+            if xxx.split('@'):
+                xxx = xxx.split('@')[-1]
+    
     # Добавляем новых ботов в список и записываем в файл
-    with open(unique_file_name, "a", encoding='utf-8') as f:
-        for x in ls:
-            # Проверяем, что строка начинается с "https://t.me/"
-            if x.startswith("https://t.me/"):
-                # Извлекаем юзернейм бота
-                xxx = x.split('https://t.me/')[-1].strip()
-                if xxx.startswith('@'):
-                    xxx = xxx[1:]  # Удаляем символ '@', если он присутствует
-
-                # Проверяем, что юзернейм не пустой
-                if xxx:
-                    botttt.append(xxx)  # Добавляем юзернейм в список
-                    f.write(f"{xxx}\n")  # Записываем юзернейм в файл
+        with open(unique_file_name, "a", encoding='utf-8') as f:
+            f.write(f"{xxx}\n")
 
     await state.finish()
 
     # Очистка списков `baza` и `spisok`
     baza.clear()
     spisok.clear()
-
-    # Повторное чтение всех ботов из файла и обновление списка `botttt`
-    with open(unique_file_name, "r") as file:
-        bots = file.readlines()
-    if bots:  # Проверяем, что файл не пустой
-        botttt.clear()  # Очищаем список перед заполнением
+    bots = open(unique_file_name, "r").readlines()
+    if len(bots) >= 2:
         for bott in bots:
-            bott = bott.strip()
-            if bott:
-                botttt.append(bott)
-
-    # Отображаем общее количество ботов
-    await message.answer(f"📢 <b>Было Добавлено {len(ls)} Ботов!</b>\n"
-                         f"📊 <b>Всего Ботов в Базе: {len(botttt)}</b>")
-
+            bott = bott.split("\n")[0]
+            botttt.append(bott)
+    await message.answer(f"📢 <b>Было Добавленно {len(ls)} Ботов !!!</b>")
 
 
 async def nowi(message):
