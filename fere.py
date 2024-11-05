@@ -210,7 +210,8 @@ async def nowi(message):
                     f"➖➖➖➖➖➖➖➖➖➖➖➖\n"
                     f"<b>Вот твой бот: <a href='http://t.me/{msg}'>@{msg}</a></b>\n\n"
                     f"➖➖➖➖➖➖➖➖➖➖➖➖\n"
-                    f"<b>Если тот умрет, вернись сюда и получишь новый:</b>",
+                    f"<b>Если тот умрет, вернись сюда и получишь новый:</b>\n"
+                    f"<b>А если умру я, то пиши оператору, юзер его ты знаешь, так как он никогда не меняется</b>",
                     reply_markup=menu
                 )
                 await bot.pin_chat_message(chat_id=message.chat.id, message_id=sss.message_id)
