@@ -186,18 +186,13 @@ async def ref(call: CallbackQuery, state: FSMContext):
     await akasil.sms_text.set()
 
 
-async def is_bot_alive(bot_username):
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f'https://t.me/{bot_username}') as response:
-                if response.status == 200:
-                    text = await response.text()
-                    # Простая проверка на наличие заголовка и описания
-                    if 'tgme_page_title' in text and 'tgme_page_description' in text:
-                        return True
-    except Exception as e:
-        print(f"Error checking bot @{bot_username}: {e}")
-    return False
+async def is_bot_alive(bot_username):   
+    r = requests.get(f'https://t.me/{xxx}')
+        
+    if '<i class="tgme_icon_user"></i>' not in r.text:
+        return True
+    else:
+        return False
 
 
 @dp.message_handler(state=akasil.sms_text)
@@ -219,33 +214,13 @@ async def input_text_for_ad(message: types.Message, state: FSMContext):
         xxx = xxx.strip()
 
 
-        r = requests.get(f'https://t.me/{msg[1]}')
+        r = requests.get(f'https://t.me/{xxx}')
         
         if '<i class="tgme_icon_user"></i>' not in r.text:
-            print("живой")
+            new_bots.append(xxx)
         else:
-            print("мертв")
-          
-        # Проверка доступности ботаv
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f'https://t.me/{xxx}') as response:
-                    if response.status == 200:
-                        text = await response.text()
-                        await message.answer(text)
-                        if 'tgme_page_title' in text and 'tgme_page_description' in text and 'Bot was blocked' not in text:
-                            # Бот существует
-                            new_bots.append(xxx)
-                        else:
-                            # Страница не найдена или бот недоступен
-                            dead_bots.append(xxx)
-                    else:
-                        # HTTP статус не 200
-                        dead_bots.append(xxx)
-        except Exception as e:
-            # В случае любой ошибки считаем бота недоступным
-            print(f"Error checking bot @{xxx}: {e}")
             dead_bots.append(xxx)
+          
 
     # Запись новых ботов в файл
     try:
