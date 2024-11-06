@@ -218,7 +218,7 @@ async def input_text_for_ad(message: types.Message, state: FSMContext):
             xxx = x
         xxx = xxx.strip()
 
-        # Проверка доступности бота
+        # Проверка доступности ботаv
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(f'https://t.me/{xxx}') as response:
