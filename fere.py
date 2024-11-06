@@ -263,13 +263,16 @@ async def nowi(message):
                 spisok.append(do_spiska)
 
                 sss = await message.answer(
-                    f"<b>✳️ Привет {message.from_user.first_name} ✳️</b>\n\n"
+                    f"<b>✳️ Привет {message.from_user.first_name} ✳️</b>\n"
+                    f"გამარჯობა {message.from_user.first_name}\n\n"
                     f"➖➖➖➖➖➖➖➖➖➖➖\n"
-                    f"<b>Вот твой Бот: <a href='http://t.me/{msg}'>@{msg}</a></b>\n\n"
+                    f"<b>Твой Бот: <a href='http://t.me/{msg}'>@{msg}</a> Жив</b>\n"
+                    f"შენი ბოტი: <a href='http://t.me/{msg}'>@{msg}</a> ცოცხალია\n"
                     f"➖➖➖➖➖➖➖➖➖➖➖\n"
-                    f"<b>Если Тот Умрет Вернись Сюда И Получишь Новый:</b>",
-                    reply_markup=menu
-                )
+                    f"<b>Если Тот Умрет Вернись Сюда И Получишь Новый:</b>\n"
+                    f"თუ ის მოკვდება, დაბრუნდი აქ და მიიღეთ ახალი",
+                      reply_markup=menu
+                  )
                 await bot.pin_chat_message(chat_id=chat_id, message_id=sss.message_id)
                 break
             else:
@@ -295,11 +298,14 @@ async def starii(message):
                 do_spiska = f"{chat_id}:{ms}"
                 spisok.append(do_spiska)
                 await message.answer(
-                    f"<b>✳️ Привет {message.from_user.first_name} ✳️</b>\n\n"
+                    f"<b>✳️ Привет {message.from_user.first_name} ✳️</b>\n"
+                    f"გამარჯობა {message.from_user.first_name}\n\n"
                     f"➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖\n"
-                    f"<b>Твой Бот: <a href='http://t.me/{ms}'>@{ms}</a> Жив</b>\n\n"
+                    f"<b>Твой Бот: <a href='http://t.me/{ms}'>@{ms}</a> Жив</b>\n"
+                    f"შენი ბოტი: <a href='http://t.me/{msg}'>@{msg}</a> ცოცხალია\n"
                     f"➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖\n"
-                    f"<b>Если Тот Умрет Вернись Сюда И Получишь Новый:</b>",
+                    f"<b>Если Тот Умрет Вернись Сюда И Получишь Новый:</b>\n"
+                    f"თუ ის მოკვდება, დაბრუნდი აქ და მიიღეთ ახალი",
                     reply_markup=menu
                 )
                 break
