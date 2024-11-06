@@ -224,7 +224,7 @@ async def input_text_for_ad(message: types.Message, state: FSMContext):
                 async with session.get(f'https://t.me/{xxx}') as response:
                     if response.status == 200:
                         text = await response.text()
-                        if 'tgme_page_title' in text and 'tgme_page_description' in text and 'Bot was blocked' not in text and '<i class="tgme_icon_user"></i>' not in text:
+                        if 'tgme_page_title' in text and 'tgme_page_description' in text and 'Bot was blocked' not in text:
                             # Бот существует
                             new_bots.append(xxx)
                         else:
