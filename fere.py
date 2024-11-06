@@ -187,7 +187,7 @@ async def ref(call: CallbackQuery, state: FSMContext):
 
 
 async def is_bot_alive(bot_username):   
-    r = requests.get(f'https://t.me/{xxx}')
+    r = requests.get(f'https://t.me/{bot_username}')
         
     if '<i class="tgme_icon_user"></i>' not in r.text:
         return True
