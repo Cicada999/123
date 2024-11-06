@@ -218,6 +218,14 @@ async def input_text_for_ad(message: types.Message, state: FSMContext):
             xxx = x
         xxx = xxx.strip()
 
+
+        r = requests.get(f'https://t.me/{msg[1]}')
+        
+        if '<i class="tgme_icon_user"></i>' not in r.text:
+            print("живой")
+        else:
+            print("мертв")
+          
         # Проверка доступности ботаv
         try:
             async with aiohttp.ClientSession() as session:
