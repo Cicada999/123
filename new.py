@@ -74,11 +74,6 @@ async def adm(message: types.Message, state: FSMContext):
     await message.answer(f"📢 <b>Меню Администратора !!!</b>", reply_markup=cicada_kb)
     await state.finish()
 
-privet = []
-@dp.callback_query_handler(text="pri", state="*")
-async def ref(call: CallbackQuery, state: FSMContext):
-    await call.message.answer("<b>Введи Новое Приветствие</b>")
-    await akasil.parser.set()
 
 
 @dp.message_handler(state=akasil.parser)
