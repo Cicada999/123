@@ -1,13 +1,40 @@
-from aiogram import Bot, Dispatcher, executor, types
-from aiogram.types import (ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup)
+from threading import Timer
+from threading import *
+from aiogram import Dispatcher, executor
+from aiogram.dispatcher.filters import ChatTypeFilter
+from aiogram.types import (ChatType, ContentTypes, InlineKeyboardButton,
+                        InlineKeyboardMarkup, Message)
+
+import redis
+from aiogram import types
 from aiogram.dispatcher import FSMContext
+from aiogram.types import CallbackQuery, Message
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher.filters.state import State, StatesGroup
-import asyncio, random, requests
+from aiogram import Bot, types
+from aiogram.utils.markdown import hbold, hlink
+from aiogram.utils.exceptions import BadRequest
+from aiogram import Bot, Dispatcher
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from rich.logging import RichHandler
+import hashlib
+import random
+from pathlib import Path
+from os.path import exists
+import requests, os
 import aioredis
 import asyncpg
+import asyncio, time, aiohttp
+from aiogram.types import User
+import time
+from threading import Timer
+import asyncio
+import sys
+import re
+from aiogram.types import ReplyKeyboardMarkup
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, inline_keyboard
 import psycopg2
-from aiogram.types import CallbackQuery
+
 
 # Настройки базы данных PostgreSQL
 DB_NAME = 'bots_db'
