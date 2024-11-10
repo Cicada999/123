@@ -80,22 +80,26 @@ async def init_db():
 async def create_bot_database(bot_name):
     db_name = f"{bot_name}_db"
     try:
+        # Подключение к основной базе данных postgres
         conn = psycopg2.connect(dbname='postgres', user=DB_USER, password=DB_PASSWORD, host=DB_HOST)
         conn.autocommit = True
         cursor = conn.cursor()
-        
-        # Проверяем, существует ли база данных
-        cursor.execute(f"SELECT 1 FROM pg_database WHERE datname = '{db_name}';")
-        if cursor.fetchone():
-            print(f"База данных {db_name} уже существует.")
+
+        # Проверка существования базы данных
+        cursor.execute(f"SELECT 1 FROM pg_database WHERE datname = '{db_name}'")
+        db_exists = cursor.fetchone()
+
+        if db_exists:
+            print(f"База данных {db_name} уже существует. Работаем с существующей базой.")
         else:
+            # Создание базы данных, если её нет
             cursor.execute(f"CREATE DATABASE {db_name}")
-            print(f"База данных {db_name} создана успешно.")
-        
+            print(f"База данных {db_name} успешно создана.")
+
         cursor.close()
         conn.close()
     except Exception as e:
-        print(f"Ошибка при создании базы данных {db_name}: {e}")
+        print(f"Ошибка при создании или подключении к базе данных {db_name}: {e}")
 
 # Функции работы с ботами в PostgreSQL
 async def load_bots_from_db():
