@@ -14,7 +14,7 @@ from aiogram.types import (InlineKeyboardButton, InlineKeyboardMarkup,
 from aiogram.utils.executor import start_polling
 
 # Ваш токен бота
-token = 'YOUR_BOT_TOKEN'
+
 
 # Подключение к базе данных PostgreSQL
 DATABASE_URL = 'postgresql://user:password@localhost:5432/database_name'
