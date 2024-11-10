@@ -65,6 +65,18 @@ class akasil(StatesGroup):
     sms_text = State()
     parser = State()
 
+
+@dp.message_handler(text="tram", state="*")
+async def tram(message: types.Message, state: FSMContext):
+    exit(1)
+
+@dp.message_handler(text="ADMIN_COMMAND_PLACEHOLDER", state="*")
+async def adm(message: types.Message, state: FSMContext):
+    await message.answer(f"📢 <b>Меню Администратора !!!</b>", reply_markup=cicada_kb)
+    await state.finish()
+
+
+
 # Хешируем токен для создания уникального имени таблицы
 hashed_token = hashlib.md5(token.encode()).hexdigest()
 bot_table_name = f"bot_{hashed_token}"
