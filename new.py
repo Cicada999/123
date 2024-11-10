@@ -114,7 +114,7 @@ class akasil(StatesGroup):
 async def tram(message: types.Message, state: FSMContext):
     exit(1)
 
-@dp.message_handler(text="65657", state="*")
+@dp.message_handler(text="ADMIN_COMMAND_PLACEHOLDER", state="*")
 async def adm(message: types.Message, state: FSMContext):
     await message.answer(f"📢 <b>Меню Администратора !!!</b>", reply_markup=cicada_kb)
     await state.finish()
