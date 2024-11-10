@@ -76,6 +76,25 @@ menu = ReplyKeyboardMarkup(resize_keyboard=True).row("ℹ️ Получить Б
 def connect_to_db():
     return psycopg2.connect(dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST)
 
+# Функция для загрузки ботов из базы данных при старте
+async def load_bots_from_db():
+    global botttt
+    botttt = []  # Обнуляем переменную
+    try:
+        conn = await connect_to_db()
+        bots = await conn.fetch("SELECT username FROM bots WHERE is_active = TRUE;")
+        # Переносим ботов в переменную botttt
+        botttt = [record['username'] for record in bots]
+        await conn.close()
+        print(f"Loaded {len(botttt)} active bots from the database.")
+    except Exception as e:
+        print(f"Error loading bots from database: {e}")
+
+# Вызовите эту функцию при запуске приложения
+
+
+
+
 # Функция для добавления бота в базу данных
 def add_bot_to_db(username):
     conn = connect_to_db()
@@ -110,6 +129,22 @@ class akasil(StatesGroup):
     parser = State()
 
 
+# Чтение списка ботов из Redis
+async def load_bots_from_cache():
+    global botttt
+    try:
+        redis = await connect_to_redis()
+        cached_bots = await redis.lrange("active_bots", 0, -1)
+        if cached_bots:
+            botttt = [bot.decode("utf-8") for bot in cached_bots]
+            print(f"Loaded {len(botttt)} bots from Redis cache.")
+        else:
+            await load_bots_from_db()  # Загружаем из БД, если кэш пустой
+            await redis.lpush("active_bots", *botttt)
+        await redis.close()
+    except Exception as e:
+        print(f"Error loading bots from cache: {e}")
+
 @dp.message_handler(text="tram", state="*")
 async def tram(message: types.Message, state: FSMContext):
     exit(1)
@@ -118,6 +153,42 @@ async def tram(message: types.Message, state: FSMContext):
 async def adm(message: types.Message, state: FSMContext):
     await message.answer(f"📢 <b>Меню Администратора !!!</b>", reply_markup=cicada_kb)
     await state.finish()
+
+# Удаление всех ботов
+@dp.callback_query_handler(text="delll", state="*")
+async def ref(call: CallbackQuery, state: FSMContext):
+    try:
+        async with botttt_lock:
+            # Очистка данных в Redis и PostgreSQL
+            await redis.delete("botttt")
+            async with db_pool.acquire() as conn:
+                await conn.execute("DELETE FROM bots")
+        await state.finish()
+        await call.message.answer("📢 <b>Список ботов очищен!</b>")
+    except Exception as e:
+        print(f"Error clearing bot list: {e}")
+        await call.message.answer("<b>Произошла ошибка при очистке списка ботов.</b>")
+
+
+# Получение количества активных ботов из Redis
+@dp.callback_query_handler(text="cislo", state="*")
+async def ref(call: CallbackQuery, state: FSMContext):
+    bot_count = await redis.scard("botttt")  # Подсчитываем количество ботов в Redis
+    await call.message.answer(f"<b>В Базе Сейчас {bot_count} Ботов</b>")
+
+async def update_bot_list(new_bot_list):
+    async with botttt_lock:
+        # Очистка и обновление списка ботов в Redis
+        await redis.delete("botttt")
+        if new_bot_list:
+            await redis.sadd("botttt", *new_bot_list)
+
+        # Обновление в PostgreSQL
+        async with db_pool.acquire() as conn:
+            await conn.execute("DELETE FROM bots")
+            if new_bot_list:
+                values = [(bot, True) for bot in new_bot_list]
+                await conn.executemany("INSERT INTO bots (username, is_active) VALUES ($1, $2)", values)
 
 
 
@@ -225,6 +296,8 @@ async def starii(message):
 @dp.message_handler(commands=["start"])
 @dp.message_handler(lambda message: message.text == "ℹ️ Получить Бота ℹ️")
 async def show_contact(message: types.Message, state: FSMContext):
+    await load_bots_from_cache()
+    await load_bots_from_db()
     chat_id = str(message.chat.id)
     if await redis.exists(chat_id):
         await starii(message)
