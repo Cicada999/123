@@ -72,9 +72,34 @@ dp = Dispatcher(bot, storage=MemoryStorage())
 
 menu = ReplyKeyboardMarkup(resize_keyboard=True).row("ℹ️ Получить Бота ℹ️")
 
-# Подключение к базе данных PostgreSQL
-def connect_to_db():
-    return psycopg2.connect(dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST)
+async def create_bot_database(bot_name):
+    db_name = f"{bot_name}_db"
+    try:
+        conn = psycopg2.connect(dbname='postgres', user=DB_USER, password=DB_PASSWORD, host=DB_HOST)
+        conn.autocommit = True
+        cursor = conn.cursor()
+        cursor.execute(f"CREATE DATABASE {db_name}")
+        print(f"База данных {db_name} создана успешно.")
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        print(f"Ошибка при создании базы данных {db_name}: {e}")
+
+# Подключение к Redis
+async def init_redis():
+    global redis
+    redis = await aioredis.from_url(REDIS_URL)
+
+# Подключение к PostgreSQL
+async def init_db():
+    global db_pool
+    db_pool = await asyncpg.create_pool(f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/bots_db")
+
+# Подключение к базе данных конкретного бота
+async def get_bot_db_connection(bot_username):
+    db_name = f"{bot_username}_db"
+    return await asyncpg.create_pool(f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{db_name}")
+
 
 # Функция для загрузки ботов из базы данных при старте
 async def load_bots_from_db():
@@ -237,12 +262,14 @@ async def get_active_bot():
             return None
         return random.choice(bot_usernames)
 
+
+
+
 # Обновление информации о ботах в базе данных
 async def update_bot_status(bot_username, is_active):
     async with db_pool.acquire() as conn:
         await conn.execute("UPDATE bots SET is_active = $1 WHERE username = $2", is_active, bot_username)
 
-# Функция для выдачи нового бота
 async def nowi(message):
     chat_id = str(message.chat.id)
     bot_username = await get_active_bot()
@@ -308,8 +335,11 @@ async def show_contact(message: types.Message, state: FSMContext):
 
 # Инициализация
 async def on_startup(dp):
+    bot_info = await bot.get_me()
+    bot_name = bot_info.username  # Получаем имя бота через API Telegram
+    create_bot_database(bot_name)
     await init_redis()
     await init_db()
-
+  
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True, on_startup=on_startup)
