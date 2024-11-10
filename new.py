@@ -19,7 +19,15 @@ DB_HOST = 'localhost'
 
 # Настройки Redis
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
+menu = ReplyKeyboardMarkup(resize_keyboard=True)
+menu.row("ℹ️ Получить Бота ℹ️")
 
+cicada_kb = InlineKeyboardMarkup()
+cicada_kb.add(
+    InlineKeyboardButton('➕ Добавить Ботов', callback_data='addd'),
+    InlineKeyboardButton('➖ Удалить Ботов', callback_data='delll'),
+    InlineKeyboardButton('❓ Сколько Ботов ?', callback_data='cislo')
+)
 # Настройки бота
 
 bot = Bot(token=token, parse_mode="HTML")
