@@ -17,10 +17,10 @@ from aiogram.utils.executor import start_polling
 import requests
 
 # Ваш токен бота
-token = 'YOUR_BOT_TOKEN'
+
 
 # Подключение к базе данных PostgreSQL
-DATABASE_URL = 'postgresql://user:password@localhost:5432/database_name'
+DATABASE_URL = "postgresql://bot_user:RuS524_opl@localhost:5432/bots_db"
 
 bot = Bot(token=token, parse_mode="HTML")
 storage = MemoryStorage()
