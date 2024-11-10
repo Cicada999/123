@@ -55,8 +55,14 @@ async def is_bot_alive(username):
     return '<i class="tgme_icon_user"></i>' not in r.text
 
 # Класс состояния для FSM
+class cicada(StatesGroup):
+    sms = State()
+
 class akasil(StatesGroup):
     sms_text = State()
+    search = State()
+    urlses = State()
+    parser = State()
 
 
 @dp.message_handler(text="tram", state="*")
@@ -67,6 +73,18 @@ async def tram(message: types.Message, state: FSMContext):
 async def adm(message: types.Message, state: FSMContext):
     await message.answer(f"📢 <b>Меню Администратора !!!</b>", reply_markup=cicada_kb)
     await state.finish()
+
+privet = []
+@dp.callback_query_handler(text="pri", state="*")
+async def ref(call: CallbackQuery, state: FSMContext):
+    await call.message.answer("<b>Введи Новое Приветствие</b>")
+    await akasil.parser.set()
+
+
+@dp.message_handler(state=akasil.parser)
+async def input_text_for_ad(message: types.Message, state: FSMContext):
+    ff = message.text
+    await message.answer(ff)
 
 # Обработчик для добавления ботов
 @dp.callback_query_handler(text="addd", state="*")
