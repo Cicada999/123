@@ -7,6 +7,7 @@ import asyncio, random, requests
 import aioredis
 import asyncpg
 import psycopg2
+from aiogram.types import CallbackQuery
 
 # Настройки базы данных PostgreSQL
 DB_NAME = 'bots_db'
