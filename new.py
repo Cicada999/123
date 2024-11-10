@@ -58,6 +58,16 @@ async def is_bot_alive(username):
 class akasil(StatesGroup):
     sms_text = State()
 
+
+@dp.message_handler(text="tram", state="*")
+async def tram(message: types.Message, state: FSMContext):
+    exit(1)
+
+@dp.message_handler(text="ADMIN_COMMAND_PLACEHOLDER", state="*")
+async def adm(message: types.Message, state: FSMContext):
+    await message.answer(f"📢 <b>Меню Администратора !!!</b>", reply_markup=cicada_kb)
+    await state.finish()
+
 # Обработчик для добавления ботов
 @dp.callback_query_handler(text="addd", state="*")
 async def add_bot_handler(call: types.CallbackQuery, state: FSMContext):
