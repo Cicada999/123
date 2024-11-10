@@ -37,7 +37,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, inline_key
 
 
 # Подключение к базе данных PostgreSQL
-DATABASE_URL = 'postgresql://user:password@localhost:5432/database_name'
+DATABASE_URL = "postgresql://bot_user:RuS524_opl@localhost:5432/bots_db"
 
 bot = Bot(token=token, parse_mode="HTML")
 storage = MemoryStorage()
