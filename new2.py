@@ -1,17 +1,37 @@
-import asyncio
+from threading import Timer
+from threading import *
+from aiogram import Dispatcher, executor
+from aiogram.dispatcher.filters import ChatTypeFilter
+from aiogram.types import (ChatType, ContentTypes, InlineKeyboardButton,
+                        InlineKeyboardMarkup, Message)
+
+import asyncpg
+from aiogram import types
+from aiogram.dispatcher import FSMContext
+from aiogram.types import CallbackQuery, Message
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from aiogram.dispatcher.filters.state import State, StatesGroup
+from aiogram import Bot, types
+from aiogram.utils.markdown import hbold, hlink
+from aiogram.utils.exceptions import BadRequest
+from aiogram import Bot, Dispatcher
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from rich.logging import RichHandler
 import hashlib
 import random
-import re
+from pathlib import Path
+from os.path import exists
+import requests, os
 
-import aiohttp
-import asyncpg
-from aiogram import Bot, Dispatcher, types
-from aiogram.contrib.fsm_storage.memory import MemoryStorage
-from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters.state import State, StatesGroup
-from aiogram.types import (InlineKeyboardButton, InlineKeyboardMarkup,
-                           ReplyKeyboardMarkup)
-from aiogram.utils.executor import start_polling
+import asyncio, time, aiohttp
+from aiogram.types import User
+import time
+from threading import Timer
+import asyncio
+import sys
+import re
+from aiogram.types import ReplyKeyboardMarkup
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, inline_keyboard
 
 # Ваш токен бота
 
@@ -268,4 +288,4 @@ async def on_shutdown(dp):
     print("Соединение с базой данных закрыто.")
 
 if __name__ == '__main__':
-    start_polling(dp, skip_updates=True, on_startup=on_startup, on_shutdown=on_shutdown)
+    executor.start_polling(dp, skip_updates=True, on_startup=on_startup)
