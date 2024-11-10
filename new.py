@@ -5,7 +5,7 @@ from aiogram.dispatcher.filters import ChatTypeFilter
 from aiogram.types import (ChatType, ContentTypes, InlineKeyboardButton,
                         InlineKeyboardMarkup, Message)
 
-
+import redis
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.types import CallbackQuery, Message
@@ -40,6 +40,8 @@ DB_NAME = 'bots_db'
 DB_USER = 'bot_user'
 DB_PASSWORD = 'RuS524_opl'
 DB_HOST = 'localhost'
+REDIS_URL = "redis://localhost:6379/0"
+DATABASE_URL = "postgresql://bot_user:RuS524_opl@localhost:5432/bots_db"
 
 # Настройки Redis
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
@@ -57,7 +59,7 @@ cicada_kb.add(
 redis = None
 async def init_redis():
     global redis
-    redis = await aioredis.create_redis_pool(REDIS_URL)
+    redis = aioredis.from_url(REDIS_URL)
 
 # Соединение с PostgreSQL
 db_pool = None
@@ -112,7 +114,7 @@ class akasil(StatesGroup):
 async def tram(message: types.Message, state: FSMContext):
     exit(1)
 
-@dp.message_handler(text="ADMIN_COMMAND_PLACEHOLDER", state="*")
+@dp.message_handler(text="65657", state="*")
 async def adm(message: types.Message, state: FSMContext):
     await message.answer(f"📢 <b>Меню Администратора !!!</b>", reply_markup=cicada_kb)
     await state.finish()
