@@ -5,7 +5,7 @@ from aiogram.dispatcher.filters import ChatTypeFilter
 from aiogram.types import (ChatType, ContentTypes, InlineKeyboardButton,
                         InlineKeyboardMarkup, Message)
 
-
+import asyncpg
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.types import CallbackQuery, Message
