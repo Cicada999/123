@@ -1,250 +1,271 @@
-from threading import Timer
-from threading import *
-from aiogram import Dispatcher, executor
-from aiogram.dispatcher.filters import ChatTypeFilter
-from aiogram.types import (ChatType, ContentTypes, InlineKeyboardButton,
-                        InlineKeyboardMarkup, Message)
-
-import redis
-from aiogram import types
-from aiogram.dispatcher import FSMContext
-from aiogram.types import CallbackQuery, Message
-from aiogram.contrib.fsm_storage.memory import MemoryStorage
-from aiogram.dispatcher.filters.state import State, StatesGroup
-from aiogram import Bot, types
-from aiogram.utils.markdown import hbold, hlink
-from aiogram.utils.exceptions import BadRequest
-from aiogram import Bot, Dispatcher
-from aiogram.contrib.fsm_storage.memory import MemoryStorage
-from rich.logging import RichHandler
+import asyncio
 import hashlib
 import random
-from pathlib import Path
-from os.path import exists
-import requests, os
-import aioredis
-import asyncpg
-import asyncio, time, aiohttp
-from aiogram.types import User
-import time
-from threading import Timer
-import asyncio
-import sys
 import re
-from aiogram.types import ReplyKeyboardMarkup
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, inline_keyboard
-import psycopg2
+import sys
 
+import aiohttp
+import asyncpg
+from aiogram import Bot, Dispatcher, types
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from aiogram.dispatcher import FSMContext
+from aiogram.dispatcher.filters.state import State, StatesGroup
+from aiogram.types import (InlineKeyboardButton, InlineKeyboardMarkup,
+                           ReplyKeyboardMarkup)
+from aiogram.utils.executor import start_polling
 
-# Настройки базы данных PostgreSQL
-DB_NAME = 'bots_db'
-DB_USER = 'bot_user'
-DB_PASSWORD = 'RuS524_opl'
-DB_HOST = 'localhost'
-DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
-REDIS_URL = "redis://localhost:6379/0"
+import requests
 
-# Настройки Redis
-redis_client = aioredis.from_url(REDIS_URL)
+# Ваш токен бота
+token = 'YOUR_BOT_TOKEN'
+
+# Подключение к базе данных PostgreSQL
+DATABASE_URL = 'postgresql://user:password@localhost:5432/database_name'
+
+bot = Bot(token=token, parse_mode="HTML")
+storage = MemoryStorage()
+dp = Dispatcher(bot, storage=storage)
+
+# Создаем глобальную переменную для пула подключений
+db_pool = None
+
+menu = ReplyKeyboardMarkup(resize_keyboard=True)
+menu.row("ℹ️ Получить Бота ℹ️")
+
 botttt_lock = asyncio.Lock()
 
-# Телеграм бота и интерфейсы
-menu = ReplyKeyboardMarkup(resize_keyboard=True).row("ℹ️ Получить Бота ℹ️")
-cicada_kb = InlineKeyboardMarkup().add(
+cicada_kb = InlineKeyboardMarkup()
+cicada_kb.add(
     InlineKeyboardButton('➕ Добавить Ботов', callback_data='addd'),
     InlineKeyboardButton('➖ Удалить Ботов', callback_data='delll'),
     InlineKeyboardButton('❓ Сколько Ботов ?', callback_data='cislo')
 )
-
-# Telegram Bot Token
-
-bot = Bot(token=token, parse_mode="HTML")
-dp = Dispatcher(bot, storage=MemoryStorage())
 
 class cicada(StatesGroup):
     sms = State()
 
 class akasil(StatesGroup):
     sms_text = State()
+    parser = State()
 
-# Инициализация подключения
-async def init_redis():
-    global redis
-    redis = await aioredis.from_url(REDIS_URL)
+# Хешируем токен для создания уникального имени таблицы
+hashed_token = hashlib.md5(token.encode()).hexdigest()
+bot_table_name = f"bot_{hashed_token}"
 
-async def init_db():
-    global db_pool
-    db_pool = await asyncpg.create_pool(DATABASE_URL)
+baza = []
+spisok = []
+botttt = []
 
-# Создание базы данных для каждого бота
-async def create_bot_database(bot_name):
-    db_name = f"{bot_name}_db"
-    try:
-        # Подключение к основной базе данных postgres
-        conn = psycopg2.connect(dbname='postgres', user=DB_USER, password=DB_PASSWORD, host=DB_HOST)
-        conn.autocommit = True
-        cursor = conn.cursor()
-
-        # Проверка существования базы данных
-        cursor.execute(f"SELECT 1 FROM pg_database WHERE datname = '{db_name}'")
-        db_exists = cursor.fetchone()
-
-        if db_exists:
-            print(f"База данных {db_name} уже существует. Работаем с существующей базой.")
-        else:
-            # Создание базы данных, если её нет
-            cursor.execute(f"CREATE DATABASE {db_name}")
-            print(f"База данных {db_name} успешно создана.")
-
-        cursor.close()
-        conn.close()
-    except Exception as e:
-        print(f"Ошибка при создании или подключении к базе данных {db_name}: {e}")
-
-# Функции работы с ботами в PostgreSQL
-async def load_bots_from_db():
-    global botttt
+# Асинхронная функция для создания таблиц
+async def create_tables():
     async with db_pool.acquire() as conn:
-        botttt = [record['username'] for record in await conn.fetch("SELECT username FROM bots WHERE is_active = TRUE;")]
+        # Таблица для хранения ботов
+        await conn.execute(f'''
+            CREATE TABLE IF NOT EXISTS {bot_table_name} (
+                id SERIAL PRIMARY KEY,
+                username TEXT UNIQUE NOT NULL
+            );
+        ''')
+        # Таблица для хранения связки chat_id и выданных ботов
+        await conn.execute('''
+            CREATE TABLE IF NOT EXISTS spisok (
+                chat_id BIGINT NOT NULL,
+                bot_id TEXT NOT NULL,
+                username TEXT NOT NULL,
+                PRIMARY KEY (chat_id, bot_id)
+            );
+        ''')
 
-def add_bot_to_db(username):
-    conn = psycopg2.connect(dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST)
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO bots (username, is_active) VALUES (%s, TRUE) ON CONFLICT (username) DO NOTHING;", (username,))
-    conn.commit()
-    cursor.close()
-    conn.close()
-
-# Проверка активности бота
-async def is_bot_alive(username):
-    r = requests.get(f'https://t.me/{username}')
-    return '<i class="tgme_icon_user"></i>' not in r.text
-
-# Загрузка ботов из Redis при старте
-async def load_bots_from_cache():
-    global botttt
-    cached_bots = await redis.lrange("active_bots", 0, -1)
-    if cached_bots:
-        botttt = [bot.decode("utf-8") for bot in cached_bots]
-    else:
-        await load_bots_from_db()
-        await redis.lpush("active_bots", *botttt)
-
-# Удаление всех ботов
-@dp.callback_query_handler(text="delll", state="*")
-async def delete_all_bots(call: CallbackQuery, state: FSMContext):
+# Функция для загрузки списка ботов из базы данных
+async def load_botttt():
     async with botttt_lock:
-        await redis.delete("botttt")
+        botttt.clear()
         async with db_pool.acquire() as conn:
-            await conn.execute("DELETE FROM bots")
-    await call.message.answer("📢 <b>Список ботов очищен!</b>")
-    await state.finish()
+            rows = await conn.fetch(f'SELECT username FROM {bot_table_name};')
+            botttt.extend([row['username'] for row in rows])
 
-# Получение количества активных ботов из Redis
-@dp.callback_query_handler(text="cislo", state="*")
-async def get_bot_count(call: CallbackQuery, state: FSMContext):
-    bot_count = await redis.scard("botttt")
-    await call.message.answer(f"<b>В Базе Сейчас {bot_count} Ботов</b>")
-
-# Добавление новых ботов
-@dp.callback_query_handler(text="addd", state="*")
-async def add_bot_handler(call: CallbackQuery, state: FSMContext):
-    await call.message.answer("📢 <b>Введите Список Юзиков Каждый С Новой Строки:</b>")
-    await akasil.sms_text.set()
-
-@dp.message_handler(state=akasil.sms_text)
-async def input_text_for_ad(message: Message, state: FSMContext):
-    usernames = message.text.strip().split('\n')
-    new_bots, dead_bots = [], []
-    for username in usernames:
-        username = username.replace("https://t.me/", "").replace("@", "")
-        if await is_bot_alive(username):
-            add_bot_to_db(username)
-            await redis.set(username, "active")
-            new_bots.append(username)
-        else:
-            dead_bots.append(username)
-
-    msg = f"📢 <b>Добавлено {len(new_bots)} ботов.</b>\n"
-    if dead_bots:
-        msg += f"<b>Неактивные боты:</b>\n" + '\n'.join(dead_bots)
-    await message.answer(msg)
-    await state.finish()
-
-# Получение активного бота
-async def get_active_bot():
+# Функция для обновления списка ботов в базе данных
+async def update_botttt(new_bots):
     async with db_pool.acquire() as conn:
-        bot_usernames = [record['username'] for record in await conn.fetch("SELECT username FROM bots WHERE is_active = TRUE")]
-        return random.choice(bot_usernames) if bot_usernames else None
+        await conn.execute(f'DELETE FROM {bot_table_name};')
+        for username in new_bots:
+            await conn.execute(f'''
+                INSERT INTO {bot_table_name} (username)
+                VALUES ($1)
+                ON CONFLICT (username) DO NOTHING;
+            ''', username)
+    await load_botttt()
 
-async def nowi(message):
-    chat_id = str(message.chat.id)
-    bot_username = await get_active_bot()
+# Проверка, жив ли бот
+async def is_bot_alive(bot_username):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f'https://t.me/{bot_username}') as resp:
+            text = await resp.text()
+            return '<i class="tgme_icon_user"></i>' not in text
 
-    if not bot_username:
-        await message.answer("<b>Боты скоро появятся</b>", reply_markup=menu)
-        return
-
-    # Проверка доступности бота
-    if await is_bot_alive(bot_username):
-        # Сохранение в Redis
-        await redis.set(chat_id, bot_username)
-        
-        # Сообщение о выдаче бота
-        sss = await message.answer(
-            f"<b>✳️ Привет {message.from_user.first_name} ✳️</b>\n"
-            f"გამარჯობა {message.from_user.first_name}\n\n"
-            f"➖➖➖➖➖➖➖➖➖➖➖\n"
-            f"<b>Твой Бот: <a href='http://t.me/{bot_username}'>@{bot_username}</a> Жив</b>\n"
-            f"შენი ბოტი: <a href='http://t.me/{bot_username}'>@{bot_username}</a> ცოცხალია\n"
-            f"➖➖➖➖➖➖➖➖➖➖➖\n"
-            f"<b>Если Тот Умрет Вернись Сюда И Получишь Новый:</b>\n"
-            f"თუ ის მოკვდება, დაბრუნდი აქ და მიიღეთ ახალი",
-            reply_markup=menu
-        )
-        await bot.pin_chat_message(chat_id=message.chat.id, message_id=sss.message_id)
-    else:
-        # Обновление статуса бота на неактивный
-        await update_bot_status(bot_username, False)
-        await nowi(message)
-
-# Функция для повторного получения бота
-async def starii(message):
-    chat_id = str(message.chat.id)
-    bot_username = await redis.get(chat_id)
-    
-    if bot_username and await is_bot_alive(bot_username.decode()):
-        await message.answer(
-            f"<b>✳️ Привет {message.from_user.first_name} ✳️</b>\n"
-            f"გამარჯობა {message.from_user.first_name}\n\n"
-            f"➖➖➖➖➖➖➖➖➖➖➖\n"
-            f"<b>Твой Бот: <a href='http://t.me/{bot_username.decode()}'>@{bot_username.decode()}</a> Жив</b>\n"
-            f"შენი ბოტი: <a href='http://t.me/{bot_username.decode()}'>@{bot_username.decode()}</a> ცოცხალია\n"
-            f"➖➖➖➖➖➖➖➖➖➖➖\n"
-            f"<b>Если Тот Умрет Вернись Сюда И Получишь Новый:</b>\n"
-            f"თუ ის მოკვდება, დაბრუნდი აქ და მიიღეთ ახალი",
-            reply_markup=menu
-        )
-    else:
-        await nowi(message)
-
-# Команда /start и "ℹ️ Получить Бота ℹ️"
-@dp.message_handler(commands=["start"])
-@dp.message_handler(lambda message: message.text == "ℹ️ Получить Бота ℹ️")
-async def show_contact(message: Message, state: FSMContext):
-    chat_id = str(message.chat.id)
-    if await redis.exists(chat_id):
+# Обработчик команды /start и кнопки "ℹ️ Получить Бота ℹ️"
+@dp.message_handler(commands=['start'], state="*")
+@dp.message_handler(text='ℹ️ Получить Бота ℹ️', state="*")
+async def show_contact(message: types.Message, state: FSMContext):
+    chat_id = message.chat.id
+    await load_botttt()
+    if chat_id in baza:
         await starii(message)
     else:
         await nowi(message)
 
-# Инициализация
+# Функция для выдачи нового бота
+async def nowi(message):
+    chat_id = message.chat.id
+    if len(botttt) >= 1:
+        while True:
+            msg = random.choice(botttt)
+
+            if await is_bot_alive(msg):
+                baza.append(chat_id)
+                do_spiska = f"{chat_id}:{msg}"
+                spisok.append(do_spiska)
+
+                # Сохраняем в базу данных
+                async with db_pool.acquire() as conn:
+                    await conn.execute('''
+                        INSERT INTO spisok (chat_id, bot_id, username)
+                        VALUES ($1, $2, $3)
+                        ON CONFLICT (chat_id, bot_id) DO UPDATE SET username = $3;
+                    ''', chat_id, hashed_token, msg)
+
+                sss = await message.answer(
+                    f"<b>✳️ Привет {message.from_user.first_name} ✳️</b>\n"
+                    f"➖➖➖➖➖➖➖➖➖➖➖\n"
+                    f"<b>Твой Бот: <a href='http://t.me/{msg}'>@{msg}</a> Жив</b>\n"
+                    f"➖➖➖➖➖➖➖➖➖➖➖\n"
+                    f"<b>Если тот умрет, вернись сюда и получишь новый</b>",
+                      reply_markup=menu
+                  )
+                await bot.pin_chat_message(chat_id=chat_id, message_id=sss.message_id)
+                break
+            else:
+                # Удаляем бота из базы данных
+                async with db_pool.acquire() as conn:
+                    await conn.execute(f'''
+                        DELETE FROM {bot_table_name} WHERE username = $1;
+                    ''', msg)
+                await load_botttt()
+    else:
+        await message.answer("<b>Боты скоро появятся</b>", reply_markup=menu)
+
+# Функция для выдачи ранее выданного бота
+async def starii(message):
+    chat_id = message.chat.id
+    async with db_pool.acquire() as conn:
+        row = await conn.fetchrow('''
+            SELECT username FROM spisok WHERE chat_id = $1 AND bot_id = $2;
+        ''', chat_id, hashed_token)
+    if row:
+        msg = row['username']
+        if await is_bot_alive(msg):
+            await message.answer(
+                f"<b>✳️ Привет {message.from_user.first_name} ✳️</b>\n"
+                f"➖➖➖➖➖➖➖➖➖➖➖\n"
+                f"<b>Твой Бот: <a href='http://t.me/{msg}'>@{msg}</a> Жив</b>\n"
+                f"➖➖➖➖➖➖➖➖➖➖➖\n"
+                f"<b>Если тот умрет, вернись сюда и получишь новый</b>",
+                reply_markup=menu
+            )
+        else:
+            # Удаляем запись и выдаем нового бота
+            async with db_pool.acquire() as conn:
+                await conn.execute('''
+                    DELETE FROM spisok WHERE chat_id = $1 AND bot_id = $2;
+                ''', chat_id, hashed_token)
+            await nowi(message)
+    else:
+        await nowi(message)
+
+# Администраторские команды
+@dp.message_handler(commands=['admin'], state="*")
+async def adm(message: types.Message, state: FSMContext):
+    await message.answer(f"📢 <b>Меню Администратора !!!</b>", reply_markup=cicada_kb)
+    await state.finish()
+
+@dp.callback_query_handler(text="cislo", state="*")
+async def ref(call: types.CallbackQuery, state: FSMContext):
+    await load_botttt()
+    await call.message.answer(f"<b>В базе сейчас {len(botttt)} ботов</b>")
+
+@dp.callback_query_handler(text="delll", state="*")
+async def ref(call: types.CallbackQuery, state: FSMContext):
+    try:
+        async with db_pool.acquire() as conn:
+            await conn.execute(f'DELETE FROM {bot_table_name};')
+        async with botttt_lock:
+            botttt.clear()
+        await state.finish()
+        await call.message.answer("📢 <b>Список ботов очищен!</b>")
+    except Exception as e:
+        print(f"Error clearing bot list: {e}")
+        await call.message.answer("<b>Произошла ошибка при очистке списка ботов.</b>")
+
+@dp.callback_query_handler(text="addd", state="*")
+async def ref(call: types.CallbackQuery, state: FSMContext):
+    await state.finish()
+    await call.message.answer("📢 <b>Введите список юзернеймов каждого бота с новой строки:</b>")
+    await akasil.sms_text.set()
+
+@dp.message_handler(state=akasil.sms_text)
+async def input_text_for_ad(message: types.Message, state: FSMContext):
+    ff = message.text
+    ls = ff.strip().split('\n')
+    dead_bots = []
+    new_bots = []
+
+    for x in ls:
+        x = x.strip()
+        # Парсинг юзернейма бота
+        if x.startswith('https://t.me/'):
+            xxx = x.split('https://t.me/')[-1]
+        elif x.startswith('@'):
+            xxx = x[1:]
+        else:
+            xxx = x
+        xxx = xxx.strip()
+
+        if await is_bot_alive(xxx):
+            new_bots.append(xxx)
+        else:
+            dead_bots.append(xxx)
+
+    # Обновление базы данных
+    try:
+        await update_botttt(new_bots)
+    except Exception as e:
+        print(f"Error updating bot list in database: {e}")
+        await message.answer("<b>Произошла ошибка при сохранении ботов. Попробуйте еще раз.</b>")
+        return
+
+    await state.finish()
+
+    # Формирование сообщения для отправки администратору
+    added_count = len(new_bots)
+    total_count = len(ls)
+    msg = f"📢 <b>Было добавлено {added_count} ботов из {total_count}!</b>"
+    if dead_bots:
+        dead_bots_list = '\n'.join(dead_bots)
+        msg += f"\n\n<b>Неактивные боты:</b>\n{dead_bots_list}"
+    await message.answer(msg)
+
+# Функция, которая запускается при старте бота
 async def on_startup(dp):
-    bot_info = await bot.get_me()
-    await create_bot_database(bot_info.username)
-    await init_redis()
-    await init_db()
-    await load_bots_from_cache()
+    global db_pool
+    db_pool = await asyncpg.create_pool(DATABASE_URL)
+    await create_tables()
+    await load_botttt()
+    print("Бот запущен и готов к работе!")
+
+# Функция, которая запускается при завершении работы бота
+async def on_shutdown(dp):
+    await db_pool.close()
+    print("Соединение с базой данных закрыто.")
 
 if __name__ == '__main__':
-    executor.start_polling(dp, skip_updates=True, on_startup=on_startup)
+    start_polling(dp, skip_updates=True, on_startup=on_startup, on_shutdown=on_shutdown)
