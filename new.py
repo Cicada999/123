@@ -128,7 +128,9 @@ class akasil(StatesGroup):
     urlses = State()
     parser = State()
 
-
+async def connect_to_redis():
+    return await aioredis.from_url("redis://localhost")
+  
 # Чтение списка ботов из Redis
 async def load_bots_from_cache():
     global botttt
