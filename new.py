@@ -21,7 +21,7 @@ DB_HOST = 'localhost'
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
 
 # Настройки бота
-token = "YOUR_BOT_TOKEN"
+
 bot = Bot(token=token, parse_mode="HTML")
 dp = Dispatcher(bot, storage=MemoryStorage())
 
