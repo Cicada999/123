@@ -14,7 +14,7 @@ from psycopg2 import sql
 # Настройки базы данных PostgreSQL
 DB_NAME = 'bots_db'
 DB_USER = 'bot_user'
-DB_PASSWORD = 'yourpassword'
+DB_PASSWORD = 'RuS524_opl'
 DB_HOST = 'localhost'
 
 # Настройки Redis
