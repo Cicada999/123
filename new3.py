@@ -163,11 +163,11 @@ async def starii(message):
     chat_id = message.chat.id
     async with db_pool.acquire() as conn:
         # Получаем выданного бота для пользователя
-        print("111")
+        
         row = await conn.fetchrow('''
             SELECT username FROM user_bots WHERE chat_id = $1 AND bot_id = $2;
         ''', chat_id, hashed_token)
-        print("222")
+        
         if row:
             msg = row['username']
             # Проверяем статус бота в базе данных
