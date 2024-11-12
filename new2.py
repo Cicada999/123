@@ -186,11 +186,7 @@ async def starii(message):
     else:
         await nowi(message)
 
-# Администраторские команды
-@dp.message_handler(commands=['admin'], state="*")
-async def adm(message: types.Message, state: FSMContext):
-    await message.answer(f"📢 <b>Меню Администратора !!!</b>", reply_markup=cicada_kb)
-    await state.finish()
+
 
 @dp.callback_query_handler(text="cislo", state="*")
 async def ref(call: types.CallbackQuery, state: FSMContext):
