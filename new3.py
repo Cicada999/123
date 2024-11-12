@@ -110,7 +110,7 @@ async def show_contact(message: types.Message, state: FSMContext):
 async def has_existing_bot(chat_id):
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow('''
-            SELECT username FROM spisok WHERE chat_id = $1 AND bot_id = $2;
+            SELECT username FROM user_bots WHERE chat_id = $1 AND bot_id = $2;
         ''', chat_id, hashed_token)
     return row is not None
 
@@ -163,10 +163,11 @@ async def starii(message):
     chat_id = message.chat.id
     async with db_pool.acquire() as conn:
         # Получаем выданного бота для пользователя
+        print("111")
         row = await conn.fetchrow('''
             SELECT username FROM user_bots WHERE chat_id = $1 AND bot_id = $2;
         ''', chat_id, hashed_token)
-
+        print("222")
         if row:
             msg = row['username']
             # Проверяем статус бота в базе данных
