@@ -158,7 +158,6 @@ async def nowi(message):
     else:
         await message.answer("<b>Боты скоро появятся</b>", reply_markup=menu)
 
-# Функция для выдачи ранее выданного бота
 async def starii(message):
     chat_id = message.chat.id
     async with db_pool.acquire() as conn:
@@ -167,7 +166,12 @@ async def starii(message):
         ''', chat_id, hashed_token)
     if row:
         msg = row['username']
-        if await is_bot_alive(msg):
+        # Проверяем, существует ли бот в таблице ботов
+        async with db_pool.acquire() as conn:
+            bot_exists = await conn.fetchval(f'''
+                SELECT EXISTS(SELECT 1 FROM {bot_table_name} WHERE username = $1);
+            ''', msg)
+        if bot_exists and await is_bot_alive(msg):
             await message.answer(
                 f"<b>✳️ Привет {message.from_user.first_name} ✳️</b>\n"
                 f"➖➖➖➖➖➖➖➖➖➖➖\n"
@@ -177,7 +181,7 @@ async def starii(message):
                 reply_markup=menu
             )
         else:
-            # Удаляем запись и выдаем нового бота
+            # Удаляем запись и предлагаем пользователю получить нового бота
             async with db_pool.acquire() as conn:
                 await conn.execute('''
                     DELETE FROM spisok WHERE chat_id = $1 AND bot_id = $2;
@@ -185,6 +189,7 @@ async def starii(message):
             await nowi(message)
     else:
         await nowi(message)
+
 
 
 
