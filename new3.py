@@ -191,41 +191,41 @@ async def starii(message):
             SELECT username FROM user_bots WHERE chat_id = $1 AND bot_id = $2;
         ''', chat_id, hashed_token)
 
-    if row:
-        msg = row['username']
-        # Проверяем статус бота в базе данных
-        bot_row = await conn.fetchrow(f'''
-            SELECT is_alive FROM {bot_table_name} WHERE username = $1;
-        ''', msg)
+        if row:
+            msg = row['username']
+            # Проверяем статус бота в базе данных
+            bot_row = await conn.fetchrow(f'''
+                SELECT is_alive FROM {bot_table_name} WHERE username = $1;
+            ''', msg)
 
-        if bot_row and bot_row['is_alive']:
-            # Опционально проверяем доступность бота (можно кэшировать результаты)
-            if await is_bot_alive(msg):
-                await message.answer(
-                    f"<b>✳️ Привет {message.from_user.first_name} ✳️</b>\n"
-                    f"➖➖➖➖➖➖➖➖➖➖➖\n"
-                    f"<b>Твой Бот: <a href='http://t.me/{msg}'>@{msg}</a> жив</b>\n"
-                    f"➖➖➖➖➖➖➖➖➖➖➖\n"
-                    f"<b>Если тот умрет, вернись сюда и получишь новый</b>",
-                    reply_markup=menu
-                )
+            if bot_row and bot_row['is_alive']:
+                # Опционально проверяем доступность бота (можно кэшировать результаты)
+                if await is_bot_alive(msg):
+                    await message.answer(
+                        f"<b>✳️ Привет {message.from_user.first_name} ✳️</b>\n"
+                        f"➖➖➖➖➖➖➖➖➖➖➖\n"
+                        f"<b>Твой Бот: <a href='http://t.me/{msg}'>@{msg}</a> жив</b>\n"
+                        f"➖➖➖➖➖➖➖➖➖➖➖\n"
+                        f"<b>Если тот умрет, вернись сюда и получишь новый</b>",
+                        reply_markup=menu
+                    )
+                else:
+                    # Обновляем статус бота и удаляем связь с пользователем
+                    await conn.execute(f'''
+                        UPDATE {bot_table_name} SET is_alive = FALSE WHERE username = $1;
+                    ''', msg)
+                    await conn.execute('''
+                        DELETE FROM user_bots WHERE chat_id = $1 AND bot_id = $2;
+                    ''', chat_id, hashed_token)
+                    await nowi(message)
             else:
-                # Обновляем статус бота и удаляем связь с пользователем
-                await conn.execute(f'''
-                    UPDATE {bot_table_name} SET is_alive = FALSE WHERE username = $1;
-                ''', msg)
+                # Бот недоступен, удаляем связь и выдаём нового бота
                 await conn.execute('''
                     DELETE FROM user_bots WHERE chat_id = $1 AND bot_id = $2;
                 ''', chat_id, hashed_token)
                 await nowi(message)
         else:
-            # Бот недоступен, удаляем связь и выдаём нового бота
-            await conn.execute('''
-                DELETE FROM user_bots WHERE chat_id = $1 AND bot_id = $2;
-            ''', chat_id, hashed_token)
             await nowi(message)
-    else:
-        await nowi(message)
 
 
 
