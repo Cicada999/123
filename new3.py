@@ -72,37 +72,13 @@ baza = []
 # Асинхронная функция для создания таблиц
 async def create_tables():
     async with db_pool.acquire() as conn:
-        # Проверяем, существует ли таблица
-        table_exists = await conn.fetchval(f'''
-            SELECT EXISTS (
-                SELECT 1
-                FROM information_schema.tables
-                WHERE table_name='{bot_table_name}'
+        # Таблица для хранения ботов
+        await conn.execute(f'''
+            CREATE TABLE IF NOT EXISTS {bot_table_name} (
+                username TEXT UNIQUE NOT NULL,
+                is_alive BOOLEAN NOT NULL DEFAULT TRUE
             );
         ''')
-        if table_exists:
-            # Проверяем, есть ли поле is_alive
-            column_exists = await conn.fetchval(f'''
-                SELECT EXISTS (
-                    SELECT 1
-                    FROM information_schema.columns
-                    WHERE table_name='{bot_table_name}' AND column_name='is_alive'
-                );
-            ''')
-            if not column_exists:
-                # Добавляем поле is_alive
-                await conn.execute(f'''
-                    ALTER TABLE {bot_table_name}
-                    ADD COLUMN is_alive BOOLEAN NOT NULL DEFAULT TRUE;
-                ''')
-        else:
-            # Создаём таблицу с нужной структурой
-            await conn.execute(f'''
-                CREATE TABLE IF NOT EXISTS {bot_table_name} (
-                    username TEXT NOT NULL UNIQUE,
-                    is_alive BOOLEAN NOT NULL DEFAULT TRUE
-                );
-            ''')
         # Таблица для хранения связки chat_id и выданных ботов
         await conn.execute('''
             CREATE TABLE IF NOT EXISTS user_bots (
