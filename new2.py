@@ -198,7 +198,10 @@ async def ref(call: types.CallbackQuery, state: FSMContext):
 async def ref(call: types.CallbackQuery, state: FSMContext):
     try:
         async with db_pool.acquire() as conn:
+            # Удаляем всех ботов из таблицы ботов
             await conn.execute(f'DELETE FROM {bot_table_name};')
+            # Удаляем все связи пользователей с ботами для текущего бота
+            await conn.execute('DELETE FROM spisok WHERE bot_id = $1;', hashed_token)
         await state.finish()
         await call.message.answer("📢 <b>Список ботов очищен!</b>")
     except Exception as e:
