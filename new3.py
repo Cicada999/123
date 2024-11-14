@@ -140,12 +140,15 @@ async def nowi(message):
                     # Отправляем сообщение пользователю
                     sss = await message.answer(
                         f"<b>✳️ Привет {message.from_user.first_name} ✳️</b>\n"
+                        f"გამარჯობა {message.from_user.first_name}\n\n"
                         f"➖➖➖➖➖➖➖➖➖➖➖\n"
-                        f"<b>Твой Бот: <a href='http://t.me/{msg}'>@{msg}</a> жив</b>\n"
+                        f"<b>Твой Бот: <a href='http://t.me/{msg}'>@{msg}</a> Жив</b>\n"
+                        f"შენი ბოტი: <a href='http://t.me/{msg}'>@{msg}</a> ცოცხალია\n"
                         f"➖➖➖➖➖➖➖➖➖➖➖\n"
-                        f"<b>Если тот умрет, вернись сюда и получишь новый</b>",
+                        f"<b>Если Тот Умрет Вернись Сюда И Получишь Новый:</b>\n"
+                        f"თუ ის მოკვდება, დაბრუნდი აქ და მიიღეთ ახალი",
                         reply_markup=menu
-                    )
+                  )
                     await bot.pin_chat_message(chat_id=chat_id, message_id=sss.message_id)
                     break
                 else:
@@ -180,12 +183,15 @@ async def starii(message):
                 if await is_bot_alive(msg):
                     await message.answer(
                         f"<b>✳️ Привет {message.from_user.first_name} ✳️</b>\n"
-                        f"➖➖➖➖➖➖➖➖➖➖➖\n"
-                        f"<b>Твой Бот: <a href='http://t.me/{msg}'>@{msg}</a> жив</b>\n"
-                        f"➖➖➖➖➖➖➖➖➖➖➖\n"
-                        f"<b>Если тот умрет, вернись сюда и получишь новый</b>",
+                        f"გამარჯობა {message.from_user.first_name}\n\n"
+                        f"➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖\n"
+                        f"<b>Твой Бот: <a href='http://t.me/{ms}'>@{ms}</a> Жив</b>\n"
+                        f"შენი ბოტი: <a href='http://t.me/{msg}'>@{msg}</a> ცოცხალია\n"
+                        f"➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖\n"
+                        f"<b>Если Тот Умрет Вернись Сюда И Получишь Новый:</b>\n"
+                        f"თუ ის მოკვდება, დაბრუნდი აქ და მიიღეთ ახალი",
                         reply_markup=menu
-                    )
+                )
                 else:
                     # Обновляем статус бота и удаляем связь с пользователем
                     await conn.execute(f'''
