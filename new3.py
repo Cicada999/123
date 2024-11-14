@@ -185,7 +185,7 @@ async def starii(message):
                         f"<b>✳️ Привет {message.from_user.first_name} ✳️</b>\n"
                         f"გამარჯობა {message.from_user.first_name}\n\n"
                         f"➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖\n"
-                        f"<b>Твой Бот: <a href='http://t.me/{ms}'>@{ms}</a> Жив</b>\n"
+                        f"<b>Твой Бот: <a href='http://t.me/{msg}'>@{msg}</a> Жив</b>\n"
                         f"შენი ბოტი: <a href='http://t.me/{msg}'>@{msg}</a> ცოცხალია\n"
                         f"➖➖➖➖➖➖➖➖➖➖➖➖➖➖➖\n"
                         f"<b>Если Тот Умрет Вернись Сюда И Получишь Новый:</b>\n"
