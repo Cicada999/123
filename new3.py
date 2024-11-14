@@ -309,11 +309,7 @@ async def input_text_for_ad(message: types.Message, state: FSMContext):
 # Функция, которая запускается при старте бота
 async def on_startup(dp):
     global db_pool
-    db_pool = await asyncpg.create_pool(
-        DATABASE_URL,
-        min_size=10,  # Минимальное количество соединений
-        max_size=100  # Максимальное количество соединений
-    )
+    db_pool = await asyncpg.create_pool(DATABASE_URL)  # убрали min_size и max_size
     await create_tables()
     print("Бот запущен и готов к работе!")
 
