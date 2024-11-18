@@ -217,8 +217,21 @@ async def starii(message):
 @dp.callback_query_handler(text="cislo", state="*")
 async def ref(call: types.CallbackQuery, state: FSMContext):
     async with db_pool.acquire() as conn:
+        # Получаем количество ботов
         count = await conn.fetchval(f'SELECT COUNT(*) FROM {bot_table_name};')
-    await call.message.answer(f"<b>В базе сейчас {count} ботов</b>")
+        
+        # Получаем список всех юзернеймов
+        rows = await conn.fetch(f'SELECT username FROM {bot_table_name};')
+        usernames = [row['username'] for row in rows]
+        
+        # Формируем сообщение с количеством и списком
+        if usernames:
+            usernames_text = "\n".join([f"@{username}" for username in usernames])
+            await call.message.answer(
+                f"<b>В базе сейчас {count} ботов:</b>\n\n{usernames_text}"
+            )
+        else:
+            await call.message.answer("<b>В базе нет ботов.</b>")
 
 @dp.callback_query_handler(text="delll", state="*")
 async def ref(call: types.CallbackQuery, state: FSMContext):
